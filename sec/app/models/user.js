@@ -9,6 +9,12 @@ var userSchema = mongoose.Schema({
   local       : {
     email     : String,
     password  : String,
+  },
+  google        : {
+    id          : String,
+    token       : String,
+    displayName : String,
+    username    : String
   }
 
 });
@@ -16,7 +22,7 @@ var userSchema = mongoose.Schema({
 // Methods
 // Generating a hash
 userSchema.methods.generateHash = function(password) {
-  return bcrypt.hashSync(password, bycrypt.genSaltSync(8), null);
+  return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
 };
 
 //Checking if valid
@@ -25,4 +31,4 @@ userSchema.methods.validPassword = function(password) {
 };
 
 // create the model for users and expose it.
-module.exports = mongoose.model('User', userSchema0);
+module.exports = mongoose.model('User', userSchema);
