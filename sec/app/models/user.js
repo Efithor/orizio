@@ -1,6 +1,8 @@
 // app/models/user.js
 // load the things!
 var mongoose = require('mongoose');
+mongoose.set('debug', true);
+
 var bcrypt   = require('bcrypt-nodejs');
 
 //define the schema for the user model

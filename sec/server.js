@@ -16,8 +16,12 @@ var session      = require('express-session');
 
 var configDB = require('./config/database.js');
 
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
+
 // configuration
-mongoose.connect(configDB.url); //Connect to our database.
+mongoose.connect(configDB.url, { useMongoClient: true }); //Connect to our database.
+//mongoose.Promise = global.Promise;
 
 require('./config/passport')(passport); // pass passport for configuration
 
@@ -38,6 +42,22 @@ app.use(flash());
 //routes
 require('./app/routes.js')(app, passport); // load our routes and pass in our app and fully configured passport
 
+//Socket commands
+io.on('connection', function(socket){
+  console.log('a user connected');
+  socket.on('disconnect', function(){
+    console.log('user disconnected');
+  })
+  socket.on('chat message', function(msg){
+    console.log('message: ' + msg);
+    io.emit('chat message', msg);
+  })
+});
+
 // launch
+server.listen(3000, function(){
+  console.log('chat listening on :3000');
+});
+
 app.listen(port);
 console.log('Auth listening on ' + port);
