@@ -3,7 +3,7 @@
 <html>
   <head>
     <head>
-      <title>Socket.IO chat</title>
+      <title>Oriz.io</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box;}
         body { font: 13px Helvetica, Arial; }
@@ -24,7 +24,12 @@
       <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
       <script>
         $(function () {
-          var socket = io.connect('http://localhost:3000');
+          var socToken = '<%= socToken %>';
+          //Talk to passport and figure out who I am.
+          //Have socket ask for a token.
+          var socket = io.connect('http://localhost:3000', {
+            query: {token : socToken}
+          });
           $('form').submit(function(){
             socket.emit('chat message', $('#m').val());
             $('#m').val('');

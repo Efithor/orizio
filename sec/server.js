@@ -14,6 +14,9 @@ var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
 var session      = require('express-session');
 
+var jwt = require('jsonwebtoken');
+var secretFile = require('./config/secret.js');
+
 var configDB = require('./config/database.js');
 
 var server = require('http').Server(app);
@@ -34,7 +37,7 @@ app.set('view engine', 'ejs');
 
 // for passport
 
-app.use(session({ secret: 'its a secret to everybody'}));
+app.use(session({ secret: secretFile.theSecret}));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
@@ -43,6 +46,13 @@ app.use(flash());
 require('./app/routes.js')(app, passport); // load our routes and pass in our app and fully configured passport
 
 //Socket commands
+io.use(function(socket, next){
+  if(socket.handshake.query && socket.handshake.query.token){
+    //console.log(jwt.decode(socket.handshake.query.token, secretFile.theSecret));
+  }
+
+});
+/**
 io.on('connection', function(socket){
   console.log('a user connected');
   socket.on('disconnect', function(){
@@ -53,7 +63,7 @@ io.on('connection', function(socket){
     io.emit('chat message', msg);
   })
 });
-
+**/
 // launch
 server.listen(3000, function(){
   console.log('chat listening on :3000');

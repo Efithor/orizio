@@ -2,10 +2,14 @@
 
 // load all the things we need
 var LocalStrategy   = require('passport-local').Strategy;
+var express = require("express");
+var app = express();
+var bodyParser = require("body-parser");
 
 // load up the user model
 var User            = require('../app/models/user');
 
+var theSecret       = require('./secret');
 // expose this function to our app using module.exports
 module.exports = function(passport) {
 
@@ -64,7 +68,7 @@ module.exports = function(passport) {
                 // set the user's local credentials
                 newUser.local.email    = email;
                 newUser.local.password = newUser.generateHash(password);
-
+                newUser.local.socToken = newUser.createToken(user.id, theSecret.theSecret);
                 // save the user
                 newUser.save(function(err) {
                     if (err)
@@ -107,7 +111,8 @@ module.exports = function(passport) {
             // if the user is found but the password is wrong
             if (!user.validPassword(password))
                 return done(null, false, req.flash('loginMessage', 'Oops! Wrong password.')); // create the loginMessage and save it to session as flashdata
-
+            // generate a new token for the user with the mongoID as the payload.
+            user.socToken = user.createToken(user.id, theSecret.theSecret);
             // all is well, return successful user
             return done(null, user);
         });

@@ -38,9 +38,13 @@ module.exports = function(app, passport) {
     // we will want this protected so you have to be logged in to visit
     // we will use route middleware to verify this (the isLoggedIn function)
     app.get('/orizioFront', isLoggedIn, function(req, res) {
+      // draw the page
       res.render('orizioFront.ejs', {
-        user : req.user //Get the user out of session and pass to template
+        socToken : req.user.local.socToken //Get the token and pass it to the view.
       });
+      //app.locals.token = req.user.local.socToken;
+      //console.log(app.locals.token);
+      //res.render('token', {user.local.socToken});
     });
 
     //Logout
@@ -54,8 +58,9 @@ module.exports = function(app, passport) {
 function isLoggedIn(req, res, next) {
 
   // if user is authenticated in the session, carry on
-  if (req.isAuthenticated())
-    return next();
+  if (req.isAuthenticated()){
+      return next();
+  }
 
   //if they aren't, redirect them to the home page.
   res.redirect('/');
