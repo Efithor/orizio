@@ -17,9 +17,10 @@ var session      = require('express-session');
 
 var jwt = require('jsonwebtoken');
 var secretFile = require('./config/secret.js');
-
+//Connect to database
 var configDB = require('./config/database.js');
-
+//Load gamedata
+var places = require('./app/gamedata/places.json');
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
@@ -69,7 +70,7 @@ io.use(function(socket, next){
       if(user.local.accountBanned)
         return 'User unnable to connect: banned.'
 
-      //If the user's location is invalid, set the user's location to the starting area.
+      //If the user's location is either null or DNA, set the user's location to the starting area.
 
 
       //All is good, the user has connected!
@@ -85,23 +86,35 @@ io.use(function(socket, next){
       socket.on('name character', function(msg){
         //Check if verb is valid.
         if(user.local.characterCreated)
-            return Console.log('Invalid verb!');
+            return console.log('Invalid verb!');
 
-        //Change the character's name
-        user.local.characterName = msg;
-        user.local.characterCreated = true;
-        user.save(function(err) {
-            if (err)
-                throw err;
-            return null;
+        //Check to see if anone else has that name.
+        User.findOne({ 'local.characterName' : msg}, function(err, otherUser) {
+          //If there's an error, return it.
+          if (err)
+            return err;
+
+          if(otherUser) {
+            return console.log(msg + ' is already taken.');
+          } else{
+            //Change the character's name
+            user.local.characterName = msg;
+            user.local.characterCreated = true;
+
+            user.save(function(err) {
+                if (err)
+                    throw err;
+                return null;
+            });
+            console.log('[NAMING]' + user.local.email + ' has named themselves ' +msg);
+          }
         });
-        console.log('[NAMING]' + user.local.email + ' has named themselves ' +msg);
       });
       // Handling of received chat messages
       socket.on('chat message', function(msg){
       //Determine if verb is valid
       if(!user.local.characterCreated)
-        return Console.log('Invalid verb!');
+        return console.log('Invalid verb!');
 
         console.log('[CHAT] ' + user.local.characterName + ': ' + msg);
         io.emit('chat message', user.local.characterName + ': ' + msg);
@@ -113,6 +126,7 @@ io.use(function(socket, next){
 // launch
 server.listen(3000, function(){
   console.log('chat listening on :3000');
+  //console.log(places.frontWalk.description);
 });
 
 app.listen(port);
