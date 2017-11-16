@@ -11,11 +11,15 @@ var jwt = require('jsonwebtoken');
 //define the schema for the user model
 var userSchema = mongoose.Schema({
 
-  local       : {
-    id        : String,
-    email     : String,
-    password  : String,
-    socToken  : String
+  local               : {
+    //Account info
+    email             : String,
+    password          : String,
+    //Flags
+    characterCreated  : Boolean,
+    accountBanned     : Boolean,
+    //Character Info
+    characterName     : String,
   },
   google        : {
     id          : String,

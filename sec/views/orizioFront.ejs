@@ -7,7 +7,7 @@
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box;}
         body { font: 13px Helvetica, Arial; }
-        form { background: #000; padding: 3 px; position: fixed; bottom: 0; width: 100%; }
+        form { background: #000; padding: 3 px; position: relative; bottom: 0; width: 100%; }
         form input { border: 0; padding 10px; width: 90%; margin-right: .5%; }
         form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
         #messages { list-style-type: none; margin: 0; padding: 0; }
@@ -17,7 +17,10 @@
     </head>
     <body>
       <ul id="messages"></ul>
-      <form action="">
+      <form id="Namer" action="">
+        <input id="c" autocomplete="off" /><button>Send</button>
+      </form>
+      <form id="Chatter" action="">
         <input id="m" autocomplete="off" /><button>Send</button>
       </form>
       <script src="http://localhost:3000/socket.io/socket.io.js"></script>
@@ -30,7 +33,12 @@
           var socket = io.connect('http://localhost:3000', {
             query: {token : socToken}
           });
-          $('form').submit(function(){
+          $("#Namer").submit(function(){
+            socket.emit('name character', $('#c').val());
+            $('#c').val('');
+            return false;
+          });
+          $('#Chatter').submit(function(){
             socket.emit('chat message', $('#m').val());
             $('#m').val('');
             return false;

@@ -1,4 +1,7 @@
 // app.routes.js
+// load the secret for token generation.
+var secretFile       = require('./../config/secret');
+
 module.exports = function(app, passport) {
 
     //Home Page
@@ -38,6 +41,9 @@ module.exports = function(app, passport) {
     // we will want this protected so you have to be logged in to visit
     // we will use route middleware to verify this (the isLoggedIn function)
     app.get('/orizioFront', isLoggedIn, function(req, res) {
+      //console.log(req.session.secret);
+      // create a new soc token for the user
+      req.user.local.socToken = req.user.createToken(req.user.id, secretFile.theSecret);
       // draw the page
       res.render('orizioFront.ejs', {
         socToken : req.user.local.socToken //Get the token and pass it to the view.

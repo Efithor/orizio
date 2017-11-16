@@ -9,7 +9,6 @@ var bodyParser = require("body-parser");
 // load up the user model
 var User            = require('../app/models/user');
 
-var theSecret       = require('./secret');
 // expose this function to our app using module.exports
 module.exports = function(passport) {
 
@@ -44,7 +43,6 @@ module.exports = function(passport) {
         passReqToCallback : true // allows us to pass back the entire request to the callback
     },
     function(req, email, password, done) {
-
         // asynchronous
         // User.findOne wont fire unless data is sent back
         process.nextTick(function() {
@@ -68,7 +66,9 @@ module.exports = function(passport) {
                 // set the user's local credentials
                 newUser.local.email    = email;
                 newUser.local.password = newUser.generateHash(password);
-                newUser.local.socToken = newUser.createToken(user.id, theSecret.theSecret);
+                //Setup the user's flags
+                newUser.local.accountBanned    = false;
+                newUser.local.characterCreated = false;
                 // save the user
                 newUser.save(function(err) {
                     if (err)
@@ -111,8 +111,6 @@ module.exports = function(passport) {
             // if the user is found but the password is wrong
             if (!user.validPassword(password))
                 return done(null, false, req.flash('loginMessage', 'Oops! Wrong password.')); // create the loginMessage and save it to session as flashdata
-            // generate a new token for the user with the mongoID as the payload.
-            user.socToken = user.createToken(user.id, theSecret.theSecret);
             // all is well, return successful user
             return done(null, user);
         });

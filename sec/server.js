@@ -6,6 +6,7 @@ var express   = require('express');
 var app       = express();
 var port      = process.env.PORT || 8080;
 var mongoose  = require('mongoose');
+var User      = require('./app/models/user');
 var passport  = require('passport');
 var flash     = require('connect-flash');
 
@@ -45,25 +46,70 @@ app.use(flash());
 //routes
 require('./app/routes.js')(app, passport); // load our routes and pass in our app and fully configured passport
 
-//Socket commands
+//Socket section
 io.use(function(socket, next){
-  if(socket.handshake.query && socket.handshake.query.token){
-    //console.log(jwt.decode(socket.handshake.query.token, secretFile.theSecret));
+  //Verify Token
+  if (socket.handshake.query && socket.handshake.query.token){
+    jwt.verify(socket.handshake.query.token, secretFile.theSecret, function(err, decoded) {
+      console.log('Verifying Token');
+      if(err) return next(new Error('Authentication error'));
+      socket.decoded = decoded;
+      next();
+    });
   }
+  next(new Error('Authentication error'));
+})
+.on('connection', function(socket) {
+    // Find the user stated in the token.
+    User.findById(socket.decoded, function(err, user){
+      if (err)
+        throw err;
 
+      //If user is banned, block user.
+      if(user.local.accountBanned)
+        return 'User unnable to connect: banned.'
+
+      //If the user's location is invalid, set the user's location to the starting area.
+
+
+      //All is good, the user has connected!
+      console.log(user.local.email + ' connected');
+
+      // ============================================
+      // SERVER SIDE VERB LIST ======================
+      // ============================================
+      // Might want to move this into its own file at some point in the future.
+
+      // Create Character
+      // If 'characterCreated' flag is 'false', this is the only verb they can access.
+      socket.on('name character', function(msg){
+        //Check if verb is valid.
+        if(user.local.characterCreated)
+            return Console.log('Invalid verb!');
+
+        //Change the character's name
+        user.local.characterName = msg;
+        user.local.characterCreated = true;
+        user.save(function(err) {
+            if (err)
+                throw err;
+            return null;
+        });
+        console.log('[NAMING]' + user.local.email + ' has named themselves ' +msg);
+      });
+      // Handling of received chat messages
+      socket.on('chat message', function(msg){
+      //Determine if verb is valid
+      if(!user.local.characterCreated)
+        return Console.log('Invalid verb!');
+
+        console.log('[CHAT] ' + user.local.characterName + ': ' + msg);
+        io.emit('chat message', user.local.characterName + ': ' + msg);
+      })
+
+      return user;
+    });
 });
-/**
-io.on('connection', function(socket){
-  console.log('a user connected');
-  socket.on('disconnect', function(){
-    console.log('user disconnected');
-  })
-  socket.on('chat message', function(msg){
-    console.log('message: ' + msg);
-    io.emit('chat message', msg);
-  })
-});
-**/
 // launch
 server.listen(3000, function(){
   console.log('chat listening on :3000');
