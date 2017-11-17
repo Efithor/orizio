@@ -21,6 +21,7 @@ var secretFile = require('./config/secret.js');
 var configDB = require('./config/database.js');
 //Load gamedata
 var places = require('./app/gamedata/places.json');
+var orizioConfig = require('./config/orizioConfig.json')
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
@@ -84,7 +85,7 @@ io.use(function(socket, next){
       };
       if(!locationValid(user.local.characterLocation)){
         console.log(user.local.email + ' has an invalid position.')
-        user.local.characterLocation = 'Front Walk';
+        user.local.characterLocation = orizioConfig.startingArea;
         user.save(function(err) {
             if (err)
                 throw err;
@@ -139,7 +140,7 @@ io.use(function(socket, next){
         io.emit('chat message', user.local.characterName + ': ' + msg);
       })
       //Move Character
-      
+
       return user;
     });
 });
