@@ -68,10 +68,29 @@ io.use(function(socket, next){
 
       //If user is banned, block user.
       if(user.local.accountBanned)
-        return 'User unnable to connect: banned.'
+        return 'User unable to connect: banned.'
 
       //If the user's location is either null or DNA, set the user's location to the starting area.
-
+      function locationValid(loc){
+        if(loc==null){
+          return false;
+        }
+        for(i=0;i<places.length;i++){
+          if(loc==places[i].displayName){
+            return true;
+          }
+        }
+        return false;
+      };
+      if(!locationValid(user.local.characterLocation)){
+        console.log(user.local.email + ' has an invalid position.')
+        user.local.characterLocation = 'Front Walk';
+        user.save(function(err) {
+            if (err)
+                throw err;
+            return null;
+        });
+      };
 
       //All is good, the user has connected!
       console.log(user.local.email + ' connected');
@@ -112,14 +131,15 @@ io.use(function(socket, next){
       });
       // Handling of received chat messages
       socket.on('chat message', function(msg){
-      //Determine if verb is valid
-      if(!user.local.characterCreated)
+        //Determine if verb is valid
+        if(!user.local.characterCreated)
         return console.log('Invalid verb!');
 
         console.log('[CHAT] ' + user.local.characterName + ': ' + msg);
         io.emit('chat message', user.local.characterName + ': ' + msg);
       })
-
+      //Move Character
+      
       return user;
     });
 });
