@@ -72,6 +72,7 @@ io.use(function(socket, next){
         return 'User unable to connect: banned.'
 
       //If the user's location is either null or DNA, set the user's location to the starting area.
+      //REWORK AFTER CHANGING DATA FILES
       function locationValid(loc){
         if(loc==null){
           return false;
@@ -85,7 +86,7 @@ io.use(function(socket, next){
       };
       if(!locationValid(user.local.characterLocation)){
         console.log(user.local.email + ' has an invalid position.')
-        user.local.characterLocation = orizioConfig.startingArea;
+        user.local.characterLocation = places[0];
         user.save(function(err) {
             if (err)
                 throw err;
@@ -101,7 +102,7 @@ io.use(function(socket, next){
       // ============================================
       // Might want to move this into its own file at some point in the future.
 
-      // Create Character
+      // VERB: Create Character
       // If 'characterCreated' flag is 'false', this is the only verb they can access.
       socket.on('name character', function(msg){
         //Check if verb is valid.
@@ -130,17 +131,44 @@ io.use(function(socket, next){
           }
         });
       });
-      // Handling of received chat messages
+      // VERB: CHAT
       socket.on('chat message', function(msg){
         //Determine if verb is valid
         if(!user.local.characterCreated)
-        return console.log('Invalid verb!');
+          return console.log('Invalid verb!');
 
         console.log('[CHAT] ' + user.local.characterName + ': ' + msg);
         io.emit('chat message', user.local.characterName + ': ' + msg);
       })
-      //Move Character
-
+      //VERB: MOVE
+      //REWORK AFTER CONVERTING DATA FILES
+      socket.on('char move', function(destination){
+        // Determine if the move is valid.
+        // Check if the destination in the move is listed among the exits.
+        for(i=0;i<user.local.characterLocation.exits.length;i++){
+          if(user.local.characterLocation.exits[i] == destination){
+            //If exit found, find that room.
+            for(q=0;q<places.length;q++){
+              if(places[q].displayName == destination){
+                //If the room was found, move the player there.
+                user.local.characterLocation = places[q];
+                user.save(function(err) {
+                    if (err)
+                        console.log(err);
+                    return null;
+                });
+                socket.to(socket.id).emit('chat message', 'You move to ' + user.local.characterLocation.displayName);
+                socket.to(socket.id).emit('chat message', user.local.characterLocation.description);
+                return console.log(user.local.characterName + ' has moved to '+ destination);
+              }else{
+                return console.log(user.local.characterName + ' cannot move to '+ destination + ' as that room was not found.');
+              }
+            }
+          }else{
+            return console.log(user.local.characterName + ' cannot move to '+ destination + ' as that is not an exit.');
+          }
+        }
+      })
       return user;
     });
 });

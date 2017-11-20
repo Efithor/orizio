@@ -20,9 +20,12 @@
       <ul id="messages"></ul>
       <div id="SubmissionBoxes">
         <form id="Namer" action="">
-          <input id="c" autocomplete="off" /><button>Send</button>
+          <input id="n" autocomplete="off" /><button>Send</button>
         </form>
         <form id="Chatter" action="">
+          <input id="c" autocomplete="off" /><button>Send</button>
+        </form>
+        <form id="Mover" action="">
           <input id="m" autocomplete="off" /><button>Send</button>
         </form>
       </div>
@@ -37,12 +40,17 @@
             query: {token : socToken}
           });
           $("#Namer").submit(function(){
-            socket.emit('name character', $('#c').val());
-            $('#c').val('');
+            socket.emit('name character', $('#n').val());
+            $('#n').val('');
             return false;
           });
           $('#Chatter').submit(function(){
-            socket.emit('chat message', $('#m').val());
+            socket.emit('chat message', $('#c').val());
+            $('#c').val('');
+            return false;
+          });
+          $('#Mover').submit(function(){
+            socket.emit('char move', $('#m').val());
             $('#m').val('');
             return false;
           });
