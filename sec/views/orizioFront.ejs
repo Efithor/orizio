@@ -29,21 +29,61 @@
         <form id="Chatter" action="">
           <input id="c" autocomplete="off" /><button>Send</button>
         </form>
-        <form id="Mover" action="">
-          <input id="m" autocomplete="off" /><button>Send</button>
-        </form>
       </div>
     </div>
       <script src="http://localhost:3000/socket.io/socket.io.js"></script>
       <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+      <script type="text/javascript" src="http://localhost:8080/paper/paper-full.js"></script>
       <script>
-        //Load the map
+        //Load the graphics
         var c = document.getElementById("mapCanvas");
-        var ctx = c.getContext("2d");
-        var img = new Image();
-        img.src = "http://localhost:8080/manorMap.png";
+        paper.setup(c);
+        //Load in paper tools
+        var paperTool = new paper.Tool();
+
+        var map = new paper.Raster("http://localhost:8080/manorMap.png");
+        map.position = paper.view.center;
+        //Button for the front walk.
+        var frontWalkButton = new paper.Rectangle(new paper.Point(291, 250), 80);
+        var fWBPath = new paper.Path.Rectangle(frontWalkButton);
+        fWBPath.selected = true;
+        //Button for the foyer.
+        var foyerButton = new paper.Rectangle(new paper.Point(291, 168), 80);
+        var fPath = new paper.Path.Rectangle(foyerButton);
+        fPath.selected = true;
+        //Button for the Sitting Room.
+        var sittingRoomButton = new paper.Rectangle(new paper.Point(373, 168), 80);
+        var sRBPath = new paper.Path.Rectangle(sittingRoomButton);
+        sRBPath.selected = true;
+        //Button for the front walk.
+        var diningRoomButton = new paper.Rectangle(new paper.Point(212, 168), 80);
+        var dRPath = new paper.Path.Rectangle(diningRoomButton);
+        dRPath.selected = true;
+        //Button for the front walk.
+        var kitchenButton = new paper.Rectangle(new paper.Point(212, 85), 80);
+        var kPath = new paper.Path.Rectangle(kitchenButton);
+        kPath.selected = true;
+
         window.onload = function(){
-          ctx.drawImage(img,0,0);
+          //Handle canvas clicks.
+          paperTool.onMouseDown = function(event){
+            if(fWBPath.contains(event.point)){
+              console.log('The Front Walk was clicked.');
+            }
+            if(fPath.contains(event.point)){
+              console.log('The Foyer was clicked.');
+            }
+            if(sRBPath.contains(event.point)){
+              console.log('The Sitting Room was clicked.');
+            }
+            if(dRPath.contains(event.point)){
+              console.log('The Dining Room was clicked.');
+            }
+            if(kPath.contains(event.point)){
+              console.log('The Kitchen was clicked.');
+            }
+          }
+          paper.view.update();
         }
         $(function () {
           //Handle socket related stuff
@@ -58,15 +98,23 @@
             $('#c').val('');
             return false;
           });
+          /**
           $('#Mover').submit(function(){
             socket.emit('char move', $('#m').val());
             $('#m').val('');
             return false;
           });
+          **/
           socket.on('chat message', function(msg){
             $('#messages').append($('<li>').text(msg));
+            updateScrollbar();
           });
         });
+        //Function to handle the scrollbar
+        function updateScrollbar(){
+            var element = document.getElementById('messages');
+            element.scrollTop = element.scrollHeight;
+        }
       </script>
     </body>
   </html>
