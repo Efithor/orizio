@@ -20,7 +20,7 @@ var userSchema = mongoose.Schema({
     accountBanned     : Boolean,
     //Character Info
     characterName     : String,
-    characterLocation : Object,
+    characterLocationID : Object,
   },
   google        : {
     id          : String,
