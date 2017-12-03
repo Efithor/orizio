@@ -12,7 +12,7 @@
         form input { border: 0; padding 10px; width: 90%; margin-right: .5%; }
         form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
         #messages { list-style-type: none; margin: 0; padding: 0; border-style:solid;
-          width:640px;overflow-y:scroll; position:absolute; top:410px; bottom:90px;}
+          width:640px;overflow-y:scroll; position:absolute; top:410px; bottom:50px;}
         #messages li { padding: 5px 10px; }
         #messages li:nth-child(odd) { background: #eee; }
         #map {}
@@ -35,57 +35,97 @@
       <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
       <script type="text/javascript" src="http://localhost:8080/paper/paper-full.js"></script>
       <script>
+        //Clientside data
+        //Array of valid exits - prevent the user from clicking exits that don't work.
+        var validExits = [];
+        var playerTokenPos;
+        var otherPeopleInRoom = [];
         //Load the graphics
         var c = document.getElementById("mapCanvas");
         paper.setup(c);
         //Load in paper tools
         var paperTool = new paper.Tool();
-
+        //Load images
         var map = new paper.Raster("http://localhost:8080/manorMap.png");
         map.position = paper.view.center;
+        var roomSelectorIcon = document.createElement("IMG");
+        roomSelectorIcon.setAttribute("src", "http://localhost:8080/roomSelector.png");
+        var roomSelector = new paper.Raster(roomSelectorIcon, new paper.Point(-5000,-5000));
+        var playerPawn = new paper.Path.RegularPolygon(new paper.Point(-5000, -5000), 3, 25);
+        playerPawn.fillColor = 'blue';
         //Button for the front walk.
         var frontWalkButton = new paper.Rectangle(new paper.Point(291, 250), 80);
         var fWBPath = new paper.Path.Rectangle(frontWalkButton);
-        fWBPath.selected = true;
         //Button for the foyer.
         var foyerButton = new paper.Rectangle(new paper.Point(291, 168), 80);
         var fPath = new paper.Path.Rectangle(foyerButton);
-        fPath.selected = true;
         //Button for the Sitting Room.
         var sittingRoomButton = new paper.Rectangle(new paper.Point(373, 168), 80);
         var sRBPath = new paper.Path.Rectangle(sittingRoomButton);
-        sRBPath.selected = true;
         //Button for the front walk.
         var diningRoomButton = new paper.Rectangle(new paper.Point(212, 168), 80);
         var dRPath = new paper.Path.Rectangle(diningRoomButton);
-        dRPath.selected = true;
         //Button for the front walk.
         var kitchenButton = new paper.Rectangle(new paper.Point(212, 85), 80);
         var kPath = new paper.Path.Rectangle(kitchenButton);
-        kPath.selected = true;
 
         window.onload = function(){
           //Handle canvas clicks.
           paperTool.onMouseDown = function(event){
-            if(fWBPath.contains(event.point)){
-              console.log('The Front Walk was clicked.');
+            if(fWBPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='frontWalk';})!=-1){
+              moveCharacter('frontWalk');
             }
-            if(fPath.contains(event.point)){
-              console.log('The Foyer was clicked.');
+            if(fPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='foyer';})!=-1){
+              moveCharacter('foyer');
             }
-            if(sRBPath.contains(event.point)){
-              console.log('The Sitting Room was clicked.');
+            if(sRBPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='sittingRoom';})!=-1){
+              moveCharacter('sittingRoom');
             }
-            if(dRPath.contains(event.point)){
-              console.log('The Dining Room was clicked.');
+            if(dRPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='diningRoom';})!=-1){
+              moveCharacter('diningRoom');
             }
-            if(kPath.contains(event.point)){
-              console.log('The Kitchen was clicked.');
+            if(kPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='kitchen';})!=-1){
+              moveCharacter('kitchen');
             }
           }
-          paper.view.update();
-        }
-        $(function () {
+          //Handle mouse hovers
+          var mousePos;
+          //If the mouse moves, record the movement.
+          paperTool.onMouseMove = function(event){
+            mousePos = event.point;
+          }
+          paper.view.onFrame = function(event){
+            //Move the room selector
+            var roomSelected = false;
+            if(fWBPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='frontWalk';})!=-1){
+              roomSelector.position = new paper.Point(331, 290);
+              roomSelected = true;
+            }
+            if(fPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='foyer';})!=-1){
+              roomSelector.position = new paper.Point(331, 208);
+              roomSelected = true;
+            }
+            if(sRBPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='sittingRoom';})!=-1){
+              roomSelector.position = new paper.Point(413, 208);
+              roomSelected = true;
+            }
+            if(dRPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='diningRoom';})!=-1){
+              roomSelector.position = new paper.Point(252, 208);
+              roomSelected = true;
+            }
+            if(kPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='kitchen';})!=-1){
+              roomSelector.position = new paper.Point(252, 125);
+              roomSelected = true;
+            }
+            if(!roomSelected){
+              roomSelector.position = new paper.Point(-5000, -5000);
+            }
+            //Ensure the player token is in the right place.
+
+            paper.view.update();
+          }
+
+          //Socket Related stuff
           //Handle socket related stuff
           var socToken = '<%= socToken %>';
           //Talk to passport and figure out who I am.
@@ -93,27 +133,53 @@
           var socket = io.connect('http://localhost:3000', {
             query: {token : socToken}
           });
+          console.log(socket);
+          //Send Chat message
           $('#Chatter').submit(function(){
             socket.emit('chat message', $('#c').val());
             $('#c').val('');
             return false;
           });
-          /**
-          $('#Mover').submit(function(){
-            socket.emit('char move', $('#m').val());
-            $('#m').val('');
-            return false;
-          });
-          **/
+          //Move character function
+          function moveCharacter(dest){
+            socket.emit('char move', dest);
+          };
+          //Receive Chat
           socket.on('chat message', function(msg){
             $('#messages').append($('<li>').text(msg));
             updateScrollbar();
           });
-        });
+          //Receive Data
+          socket.on('data: validExits', function(data){
+            validExits = [];
+            validExits = data;
+          });
+          socket.on('data: currRoom', function(data){
+            playerTokenPos = data;
+            updatePlayerToken();
+          });
+        }
         //Function to handle the scrollbar
         function updateScrollbar(){
             var element = document.getElementById('messages');
             element.scrollTop = element.scrollHeight;
+        }
+        function updatePlayerToken(){
+          if(playerTokenPos==='frontWalk'){
+            playerPawn.position = new paper.Point(331, 290);
+          }
+          if(playerTokenPos==='foyer'){
+            playerPawn.position = new paper.Point(331, 208);
+          }
+          if(playerTokenPos==='sittingRoom'){
+            playerPawn.position = new paper.Point(413, 208);
+          }
+          if(playerTokenPos==='diningRoom'){
+            playerPawn.position = new paper.Point(252, 208);
+          }
+          if(playerTokenPos==='kitchen'){
+            playerPawn.position = new paper.Point(252, 125);
+          }
         }
       </script>
     </body>

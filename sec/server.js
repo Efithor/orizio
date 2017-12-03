@@ -93,12 +93,14 @@ io.use(function(socket, next){
     // Find the user stated in the token.
     User.findById(socket.decoded, function(err, user){
       if (err)
-        throw err;
+        console.log(err);
 
       //If user is banned, block user.
       if(user.local.accountBanned)
         return 'User unable to connect: banned.'
 
+      //ascribe user to socket space for easier access.
+      socket.userInfo = user.local;
       //Have the user join their own personal channel.
       socket.join('priv/' + user.id);
 
@@ -151,12 +153,23 @@ io.use(function(socket, next){
             return null;
         });
         socket.leave('room/'+currRoom.id);
+        io.to('room/'+currRoom.id).emit('chat message',user.local.characterName + 'exits the ' + currRoom.displayName);
+        //io.to('room/'+currRoom.id).emit('data: localFolksList', );
+        //Update localFolksList for the left room
         currRoom = getUserRoomRef(user.local.characterLocationID);
+        io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + 'walks into the ' + currRoom.displayName);
         socket.join('room/'+user.local.characterLocationID);
+        //Update localFolksList for the joined room
         console.log(user.local.email + ' has moved to ' + destinationID);
+        io.to('priv/' + user.id).emit('data: validExits', currRoom.exits);
+        io.to('priv/' + user.id).emit('data: currRoom', currRoom.id);
         io.to('priv/' + user.id).emit('chat message', 'You move to the ' + currRoom.displayName);
         io.to('priv/' + user.id).emit('chat message', currRoom.description);
-        io.to('room/'+user.local.characterLocationID).broadcast('chat message',user.local.characterName + 'walks into the ' + currRoom.displayName);
+      })
+      //VERB: DISCONNECT
+      socket.on('disconnect', function(){
+        //Update localFolksList for the left room
+        io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' vanishes from the ' + getUserRoomRef(user.local.characterLocationID).displayName);
       })
 
       return user;
@@ -222,19 +235,23 @@ function manifestPlayerCharacter(_user,_socket){
   //If the user's location is either null or DNA, set the user's location to the starting area.
   if(!validLocationID(user.local.characterLocationID)){
     console.log(user.local.email + ' has an invalid position. Sending to ' + places[0].displayName);
-    user.local.characterLocationID = places[0].id;
+    user.local.characterLocationID = places[0].id; //Replace this with the room entry function.
     user.save(function(err) {
         if (err)
             throw err;
         return null;
     });
   };
-
   //Have the user join the channel for the room they're standing in.
+  io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' manifests into the ' + getUserRoomRef(user.local.characterLocationID).displayName);
   socket.join('room/'+user.local.characterLocationID);
-
   //All is good, the user has connected!
-  console.log(user.local.characterName + ' connected');
+  //Tech for the user list feature:
+  console.log(Object.keys(io.sockets.adapter.rooms['room/'+user.local.characterLocationID].length)); //# users in a room
+  console.log(io.sockets.connected[Object.keys(io.sockets.adapter.rooms['room/'+user.local.characterLocationID].sockets)[0]].userInfo.characterName); //Name of user in said room.
+  //Update localFolksList for the joined room
+  io.to('priv/' + user.id).emit('data: validExits', getUserRoomRef(user.local.characterLocationID).exits);
+  io.to('priv/' + user.id).emit('data: currRoom', getUserRoomRef(user.local.characterLocationID).id);
   io.to('priv/' + user.id).emit('chat message', 'Welcome, ' + user.local.characterName);
   io.to('priv/' + user.id).emit('chat message', getUserRoomRef(user.local.characterLocationID).description);
 }

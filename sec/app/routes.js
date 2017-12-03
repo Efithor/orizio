@@ -48,9 +48,6 @@ module.exports = function(app, passport) {
       res.render('orizioFront.ejs', {
         socToken : req.user.local.socToken //Get the token and pass it to the view.
       });
-      //app.locals.token = req.user.local.socToken;
-      //console.log(app.locals.token);
-      //res.render('token', {user.local.socToken});
     });
 
     //Logout
