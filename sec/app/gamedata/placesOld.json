@@ -1,0 +1,32 @@
+[
+  {
+    "id"          : "frontWalk",
+	  "displayName" : "Front Walk",
+	  "description" : "You stand on a cobblestone path leading to a large manor house. The air is warm and windless.",
+    "exits"       : ["foyer"]
+  },
+  {
+    "id"          : "foyer",
+    "displayName" : "Foyer",
+	  "description" : "You stand in the foyer. A too-bright chandelier hangs from the ceiling. An archway to your left leads to the dining room. Another arch to your right leads to the Sitting Room.",
+    "exits"       : ["frontWalk", "diningRoom", "sittingRoom"]
+  },
+  {
+    "id"          : "diningRoom",
+	  "displayName" : "Dining Room",
+	  "description" : "You stand in the dining room. There is a door to the kitchen.",
+    "exits"       : ["foyer", "kitchen"]
+  },
+  {
+    "id"          : "sittingRoom",
+	  "displayName" : "Sitting Room",
+	  "description" : "You are standing in the Sitting Room. Huh.",
+    "exits"       : ["foyer"]
+  },
+  {
+    "id"          : "kitchen",
+	  "displayName" : "Kitchen",
+	  "description" : "You stand in the Kitchen. There's an exit to the Dining Room.",
+    "exits"       : ["diningRoom"]
+  }
+]

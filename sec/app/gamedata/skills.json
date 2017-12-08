@@ -1,0 +1,17 @@
+[
+  {
+    "id"    : "hammers",
+    "displayName" : "Hammers",
+    "linkedWeaponClasses" : ["hammer"]
+  },
+  {
+    "id" : "spears",
+    "displayName" : "Spears",
+    "linkedWeaponClasses" : ["spear"]
+  },
+  {
+    "id" : "swords",
+    "Id" : "Swords",
+    "linkedWeaponClasses" : ["sword"]
+  }
+]

@@ -96,8 +96,20 @@ io.use(function(socket, next){
         console.log(err);
 
       //If user is banned, block user.
-      if(user.local.accountBanned)
-        return 'User unable to connect: banned.'
+      if(user.local.accountBanned){
+        console.log('User ' + user.local.email + ' is banned. Disconnecting...');
+        socket.disconnect();
+        return;
+      }
+
+      //If user already has a socket connection, close the connection
+      for(var i=0; i< Object.keys(io.sockets.connected).length; i++){
+        if(typeof io.sockets.connected[Object.keys(io.sockets.connected)[i]].userInfo != 'undefined' && user.local.email === io.sockets.connected[Object.keys(io.sockets.connected)[i]].userInfo.email){
+          console.log('User ' + user.local.email + ' is already connected. Disconnecting...');
+          socket.disconnect();
+          return;
+        }
+      }
 
       //ascribe user to socket space for easier access.
       socket.userInfo = user.local;
@@ -153,12 +165,14 @@ io.use(function(socket, next){
             return null;
         });
         socket.leave('room/'+currRoom.id);
-        io.to('room/'+currRoom.id).emit('chat message',user.local.characterName + 'exits the ' + currRoom.displayName);
+        emitUsersInRoomList(currRoom.id);
+        io.to('room/'+currRoom.id).emit('chat message',user.local.characterName + ' exits the ' + currRoom.displayName);
         //io.to('room/'+currRoom.id).emit('data: localFolksList', );
         //Update localFolksList for the left room
         currRoom = getUserRoomRef(user.local.characterLocationID);
-        io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + 'walks into the ' + currRoom.displayName);
+        io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' walks into the ' + currRoom.displayName);
         socket.join('room/'+user.local.characterLocationID);
+        emitUsersInRoomList(user.local.characterLocationID);
         //Update localFolksList for the joined room
         console.log(user.local.email + ' has moved to ' + destinationID);
         io.to('priv/' + user.id).emit('data: validExits', currRoom.exits);
@@ -170,6 +184,7 @@ io.use(function(socket, next){
       socket.on('disconnect', function(){
         //Update localFolksList for the left room
         io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' vanishes from the ' + getUserRoomRef(user.local.characterLocationID).displayName);
+        emitUsersInRoomList(user.local.characterLocationID);
       })
 
       return user;
@@ -245,13 +260,29 @@ function manifestPlayerCharacter(_user,_socket){
   //Have the user join the channel for the room they're standing in.
   io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' manifests into the ' + getUserRoomRef(user.local.characterLocationID).displayName);
   socket.join('room/'+user.local.characterLocationID);
+  emitUsersInRoomList(user.local.characterLocationID);
   //All is good, the user has connected!
-  //Tech for the user list feature:
-  console.log(Object.keys(io.sockets.adapter.rooms['room/'+user.local.characterLocationID].length)); //# users in a room
-  console.log(io.sockets.connected[Object.keys(io.sockets.adapter.rooms['room/'+user.local.characterLocationID].sockets)[0]].userInfo.characterName); //Name of user in said room.
+
+
   //Update localFolksList for the joined room
   io.to('priv/' + user.id).emit('data: validExits', getUserRoomRef(user.local.characterLocationID).exits);
   io.to('priv/' + user.id).emit('data: currRoom', getUserRoomRef(user.local.characterLocationID).id);
   io.to('priv/' + user.id).emit('chat message', 'Welcome, ' + user.local.characterName);
   io.to('priv/' + user.id).emit('chat message', getUserRoomRef(user.local.characterLocationID).description);
+}
+//Given the id of a room, emit the current player list for that room to users in said room.
+//Should be used just after someone enters or leaves a room.
+function emitUsersInRoomList(_roomToUpdate){
+  var roomToUpdate = _roomToUpdate;
+  var playerList = [];
+  //If there's nobody in the room, do nothing.
+  if (typeof io.sockets.adapter.rooms['room/'+roomToUpdate] === "undefined") {
+    return;
+  }
+  for(var i=0;i<io.sockets.adapter.rooms['room/'+roomToUpdate].length;i++){
+    playerList[i] = io.sockets.connected[Object.keys(io.sockets.adapter.rooms['room/'+roomToUpdate].sockets)[i]].userInfo.characterName;
+  }
+  //Sort array alphabetically to improve readablity and prevent players from using it to suss out other player's tokens.
+  playerList.sort();
+  io.to('room/'+roomToUpdate).emit('data: playerList', playerList);
 }

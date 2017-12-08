@@ -1,0 +1,56 @@
+[
+  {
+    "id" : "bronzeHammer",
+    "displayName" : "Bronze Hammer",
+    "class" : "hammer",
+    "power" : "1"
+  }
+  {
+    "id" : "ironHammer",
+    "displayName" : "Iron Hammer",
+    "class" : "hammer",
+    "power" : "2"
+  }
+  {
+    "id" : "steelHammer",
+    "displayName" : "Steel Hammer",
+    "class" : "hammer",
+    "power" : "3"
+  }
+  {
+    "id" : "bronzeSwordr",
+    "displayName" : "Bronze Sword",
+    "class" : "sword",
+    "power" : "1"
+  }
+  {
+    "id" : "ironSword",
+    "displayName" : "Iron Sword",
+    "class" : "Sword",
+    "power" : "2"
+  }
+  {
+    "id" : "steelSword",
+    "displayName" : "Steel Sword",
+    "class" : "sword",
+    "power" : "3"
+  }
+  {
+    "id" : "bronzeSpear",
+    "displayName" : "Bronze Spear",
+    "class" : "spear",
+    "power" : "1"
+  }
+  {
+    "id" : "ironSpear",
+    "displayName" : "Iron Spear",
+    "class" : "spear",
+    "power" : "2"
+  }
+  {
+    "id" : "steelSpear",
+    "displayName" : "Steel Spear",
+    "class" : "spear",
+    "power" : "3"
+  }
+]

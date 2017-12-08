@@ -21,6 +21,9 @@ var userSchema = mongoose.Schema({
     //Character Info
     characterName     : String,
     characterLocationID : Object,
+    characterInventory  : Object,
+    characterSkills     : Object,
+    characterEquipment  : Object
   },
   google        : {
     id          : String,

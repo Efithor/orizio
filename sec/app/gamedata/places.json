@@ -1,32 +1,23 @@
 [
   {
-    "id"          : "frontWalk",
-	  "displayName" : "Front Walk",
-	  "description" : "You stand on a cobblestone path leading to a large manor house. The air is warm and windless.",
-    "exits"       : ["foyer"]
+    "id"          : "adacross",
+	  "displayName" : "City of Adacross",
+	  "description" : "The City of Adacross.",
+    "type"        : "plaza",
+    "exits"       : ["trainingField", "graniteSpire"]
   },
   {
-    "id"          : "foyer",
-    "displayName" : "Foyer",
-	  "description" : "You stand in the foyer. A too-bright chandelier hangs from the ceiling. An archway to your left leads to the dining room. Another arch to your right leads to the Sitting Room.",
-    "exits"       : ["frontWalk", "diningRoom", "sittingRoom"]
+    "id"          : "trainingField",
+    "displayName" : "Training Field",
+	  "description" : "A training field outside of Adacross.",
+    "type"        : "dungeon",
+    "exits"       : ["adacross"]
   },
   {
-    "id"          : "diningRoom",
-	  "displayName" : "Dining Room",
-	  "description" : "You stand in the dining room. There is a door to the kitchen.",
-    "exits"       : ["foyer", "kitchen"]
-  },
-  {
-    "id"          : "sittingRoom",
-	  "displayName" : "Sitting Room",
-	  "description" : "You are standing in the Sitting Room. Huh.",
-    "exits"       : ["foyer"]
-  },
-  {
-    "id"          : "kitchen",
-	  "displayName" : "Kitchen",
-	  "description" : "You stand in the Kitchen. There's an exit to the Dining Room.",
-    "exits"       : ["diningRoom"]
+    "id"          : "graniteSpire",
+	  "displayName" : "Granite Spire",
+	  "description" : "A natural tower of granite, honycombed with unnatural tunnels.",
+    "type"        : "dungeon",
+    "exits"       : ["adacross"]
   }
 ]

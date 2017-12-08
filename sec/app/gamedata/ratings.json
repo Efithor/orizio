@@ -1,0 +1,17 @@
+[
+  {
+    "id" : "blunt",
+    "displayName" : "Blunt",
+    "linkedSkills" : ["hammers"]
+  }
+  {
+    "id" : "slice",
+    "displayName" : "Slice",
+    "linkedSkills" : ["swords"]
+  }
+  {
+    "id" : "pierce",
+    "displayName" : "Pierce",
+    "linkedSkills" : ["spears"]
+  }
+]
