@@ -1,17 +1,33 @@
 [
   {
-    "id" : "blunt",
-    "displayName" : "Blunt",
-    "linkedSkills" : ["hammers"]
+    "id" : "bluntOff",
+    "displayName" : "Blunt Offence",
+    "linkedSkills" : [{"hammers" : 1}],
   }
   {
-    "id" : "slice",
-    "displayName" : "Slice",
-    "linkedSkills" : ["swords"]
+    "id" : "bluntDef",
+    "displayName" : "Blunt Defence",
+    "linkedSkills" : [{"chainArmors" : 1},{"plateArmors" : 0.5}]
   }
   {
-    "id" : "pierce",
-    "displayName" : "Pierce",
-    "linkedSkills" : ["spears"]
+    "id" : "sliceOff",
+    "displayName" : "Slice Offence",
+    "linkedSkills" : [{"swords" : 1}],
+  }
+  {
+    "id" : "sliceDef",
+    "displayName" : "Slice Defence",
+    "linkedSkills" : [{"chainArmors" : 0.75},{"plateArmors" : 0.75}]
+  }
+  {
+    "id" : "pierceOff",
+    "displayName" : "Pierce Offence",
+    "linkedSkills" : [{"spears" : 1}],
+
+  }
+  {
+    "id" : "pierceDef",
+    "displayName" : "Pierce Defence",
+    "linkedSkills" : [{"chainArmors" : 0.5},{"plateArmors" : 1}]
   }
 ]

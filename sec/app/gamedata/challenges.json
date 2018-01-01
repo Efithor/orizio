@@ -1,0 +1,47 @@
+[
+  {
+    "id" : "trainingDummy",
+    "displayName" : "Training Dummy",
+    "offRatings" : [{"blunt" : 2},{"slice" : 0},{"pierce" : 1}],
+    "defRatings" : [{"blunt" : 1},{"slice" : 1},{"pierce" : 1}],
+    "health" : 20,
+    "rewards" : [{"nothing" : 1}],
+    "XP"  :  1
+  }
+  {
+    "id" : "spireImp",
+    "displayName" : "Spire Imp",
+    "offRatings" : [{"blunt" : 3},{"slice" : 2},{"pierce" : 5}],
+    "defRatings" : [{"blunt" : 2},{"slice" : 1},{"pierce" : 3}],
+    "health" : 20,
+    "rewards" : [{"nothing" : 1},{"bronzeHammer" : 1},{"bronzeSword" : 1},{"bronzeSpear" : 1}],
+    "XP"  :  5
+  },
+  {
+    "id" : "minotaur",
+    "displayName" : "Minotaur",
+    "offRatings" : [{"blunt" : 7},{"slice" : 0},{"pierce" : 0}],
+    "defRatings" : [{"blunt" : 4},{"slice" : 4},{"pierce" : 4}],
+    "health" : 40,
+    "rewards" : [{"nothing" : 0.25},{"ironHammer" : 0.25},{"ironSword" : 0.25},{"ironSpear" : 0.25}],
+    "XP"  :  10
+  },
+  {
+    "id" : "greyPlatoon",
+    "displayName" : "Grey Platoon",
+    "offRatings" : [{"blunt" : 0},{"slice" : 5},{"pierce" : 12}],
+    "defRatings" : [{"blunt" : 8},{"slice" : 6},{"pierce" : 4}],
+    "health" : 80,
+    "rewards" : [{"nothing" : 0.25},{"steelHammer" : 0.25},{"steelSword" : 0.25},{"steelSpear" : 0.25}],
+    "XP"  :  15
+  },
+  {
+    "id" : "kingMolagon",
+    "displayName" : "King Molagon",
+    "offRatings" : [{"blunt" : 7},{"slice" : 20},{"pierce" : 0}],
+    "defRatings" : [{"blunt" : 4},{"slice" : 4},{"pierce" : 4}],
+    "health" : 150,
+    "rewards" : [{"nothing" : 0.25},{"wrathiteHammer" : 0.25},{"wrathiteSword" : 0.25},{"wrathiteSpear" : 0.25}],
+    "XP"  :  50
+  }
+]

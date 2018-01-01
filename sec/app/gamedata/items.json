@@ -2,55 +2,141 @@
   {
     "id" : "bronzeHammer",
     "displayName" : "Bronze Hammer",
+    "types" : ["equipment","weapon"],
     "class" : "hammer",
-    "power" : "1"
+    "power" : 1
   }
   {
     "id" : "ironHammer",
     "displayName" : "Iron Hammer",
+    "types" : ["equipment","weapon"],
     "class" : "hammer",
-    "power" : "2"
+    "power" : 2
   }
   {
     "id" : "steelHammer",
     "displayName" : "Steel Hammer",
+    "types" : ["equipment","weapon"],
     "class" : "hammer",
-    "power" : "3"
+    "power" : 3
   }
   {
-    "id" : "bronzeSwordr",
+    "id" : "wrathiteHammer",
+    "displayName" : "Wrathite Hammer",
+    "types" : ["equipment","weapon"],
+    "class" : "hammer",
+    "power" : 5
+  }
+  {
+    "id" : "bronzeSword",
     "displayName" : "Bronze Sword",
+    "types" : ["equipment","weapon"],
     "class" : "sword",
-    "power" : "1"
+    "power" : 1
   }
   {
     "id" : "ironSword",
     "displayName" : "Iron Sword",
-    "class" : "Sword",
-    "power" : "2"
+    "types" : ["equipment","weapon"],
+    "class" : "sword",
+    "power" : 2
   }
   {
     "id" : "steelSword",
     "displayName" : "Steel Sword",
+    "types" : ["equipment","weapon"],
     "class" : "sword",
-    "power" : "3"
+    "power" : 3
+  }
+  {
+    "id" : "wrathiteSword",
+    "displayName" : "Wrathite Sword",
+    "types" : ["equipment","weapon"],
+    "class" : "sword",
+    "power" : 5
   }
   {
     "id" : "bronzeSpear",
     "displayName" : "Bronze Spear",
+    "types" : ["equipment","weapon"],
     "class" : "spear",
-    "power" : "1"
+    "power" : 1
   }
   {
     "id" : "ironSpear",
     "displayName" : "Iron Spear",
+    "types" : ["equipment","weapon"],
     "class" : "spear",
-    "power" : "2"
+    "power" : 2
   }
   {
     "id" : "steelSpear",
     "displayName" : "Steel Spear",
+    "types" : ["equipment","weapon"],
     "class" : "spear",
-    "power" : "3"
+    "power" : 3
+  }
+  {
+    "id" : "wrathiteSpear",
+    "displayName" : "Wrathite Sword",
+    "types" : ["equipment","weapon"],
+    "class" : "spear",
+    "power" : 5
+  }
+  {
+    "id" : "bronzeChainArmor",
+    "displayName" : "Bronze Chain Armor",
+    "types" : ["equipment","armor"],
+    "class" : "chainArmor",
+    "power" : 1
+  }
+  {
+    "id" : "ironChainArmor",
+    "displayName" : "Iron Chain Armor",
+    "types" : ["equipment","armor"],
+    "class" : "chainArmor",
+    "power" : 2
+  }
+  {
+    "id" : "steelChainArmor",
+    "displayName" : "Steel Chain Armor",
+    "types" : ["equipment","armor"],
+    "class" : "chainArmor",
+    "power" : 3
+  }
+  {
+    "id" : "wrathiteChainArmor",
+    "displayName" : "Wrathite Chain Armor",
+    "types" : ["equipment","armor"],
+    "class" : "chainArmor",
+    "power" : 5
+  }
+  {
+    "id" : "bronzePlateArmor",
+    "displayName" : "Bronze Plate Armor",
+    "types" : ["equipment","armor"],
+    "class" : "plateArmor",
+    "power" : 1
+  }
+  {
+    "id" : "ironPlateArmor",
+    "displayName" : "Iron Plate Armor",
+    "types" : ["equipment","armor"],
+    "class" : "plateArmor",
+    "power" : 2
+  }
+  {
+    "id" : "steelPlateArmor",
+    "displayName" : "Steel Plate Armor",
+    "types" : ["equipment","armor"],
+    "class" : "plateArmor",
+    "power" : 3
+  }
+  {
+    "id" : "wrathitePlateArmor",
+    "displayName" : "Wrathite Plate Armor",
+    "types" : ["equipment","armor"],
+    "class" : "plateArmor",
+    "power" : 5
   }
 ]

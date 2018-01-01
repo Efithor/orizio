@@ -2,16 +2,26 @@
   {
     "id"    : "hammers",
     "displayName" : "Hammers",
-    "linkedWeaponClasses" : ["hammer"]
+    "linkedClasses" : ["hammer"]
   },
   {
     "id" : "spears",
     "displayName" : "Spears",
-    "linkedWeaponClasses" : ["spear"]
+    "linkedClasses" : ["spear"]
   },
   {
     "id" : "swords",
-    "Id" : "Swords",
-    "linkedWeaponClasses" : ["sword"]
+    "displayName" : "Swords",
+    "linkedClasses" : ["sword"]
+  },
+  {
+    "id"    : "chainArmors",
+    "displayName" : "Chain Armor",
+    "linkedClasses" : ["chainArmor"]
+  },
+  {
+    "id"    : "plateArmors",
+    "displayName" : "Plate Armor",
+    "linkedClasses" : ["plateArmor"]
   }
 ]
