@@ -569,12 +569,15 @@ function tabulateLinkedItems(user,skillID){
 //adventure()
 //Given a dungeon room, adventure in that room.
 function adventure(user, loc){
-
+  //If it's not a dungeon, return an error.
   if(loc.type != "dungeon"){
     return console.log(loc.id + " is not a dungeon");
   }
-    io.to('priv/' + user.id).emit('chat message', 'You adventure in the ' + loc.id);
-    addItem(user,'ironHammer');
+  //Have encounters equal to the number of challenge stages.
+  //If a challenges is won, give player rewards and upgrade the challenge rating.
+  //If a challenge is lost but the player is still alive, downgrade the challenge rating.
+  //If the player dies, have them forfet half of found XP and all found items.
+
 }
 
 //********MISC FUNCTIONS******************
