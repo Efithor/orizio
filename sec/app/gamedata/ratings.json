@@ -1,33 +1,44 @@
 [
   {
     "id" : "bluntOff",
+    "type" : "offencive",
     "displayName" : "Blunt Offence",
     "linkedSkills" : [{"hammers" : 1}],
+    "defendedBy" : "bluntDef"
   }
   {
     "id" : "bluntDef",
+    "type" : "defencive",
     "displayName" : "Blunt Defence",
-    "linkedSkills" : [{"chainArmors" : 1},{"plateArmors" : 0.5}]
+    "linkedSkills" : [{"chainArmors" : 1},{"plateArmors" : 0.5}],
+    "attackedBy" : "bluntOff"
   }
   {
     "id" : "sliceOff",
+    "type" : "offencive",
     "displayName" : "Slice Offence",
     "linkedSkills" : [{"swords" : 1}],
+    "defendedBy" : "sliceDef"
   }
   {
     "id" : "sliceDef",
+    "type" : "defencive",
     "displayName" : "Slice Defence",
-    "linkedSkills" : [{"chainArmors" : 0.75},{"plateArmors" : 0.75}]
+    "linkedSkills" : [{"chainArmors" : 0.75},{"plateArmors" : 0.75}],
+    "attackedBy" : "sliceOff"
   }
   {
     "id" : "pierceOff",
+    "type" : "offencive",
     "displayName" : "Pierce Offence",
     "linkedSkills" : [{"spears" : 1}],
-
+    "defendedBy" : "pierceDef"
   }
   {
     "id" : "pierceDef",
+    "type" : "defencive",
     "displayName" : "Pierce Defence",
-    "linkedSkills" : [{"chainArmors" : 0.5},{"plateArmors" : 1}]
+    "linkedSkills" : [{"chainArmors" : 0.5},{"plateArmors" : 1}],
+    "attackedBy" : "pierceOff"
   }
 ]

@@ -568,17 +568,120 @@ function tabulateLinkedItems(user,skillID){
 //*********ADVENTURE FUNCTIONS************
 //adventure()
 //Given a dungeon room, adventure in that room.
-function adventure(user, loc){
+//Have encounters equal to the number of challenge stages.
+//Only have access to a handfull of verbs while adventuring.
+//If a challenges is won, give player rewards and upgrade the challenge rating.
+//If a challenge is lost but the player is still alive, downgrade the challenge rating.
+//If the player dies, have them forfet half of found XP and all found items.
+function adventure(userArray, loc){
   //If it's not a dungeon, return an error.
   if(loc.type != "dungeon"){
     return console.log(loc.id + " is not a dungeon");
   }
-  //Have encounters equal to the number of challenge stages.
-  //If a challenges is won, give player rewards and upgrade the challenge rating.
-  //If a challenge is lost but the player is still alive, downgrade the challenge rating.
-  //If the player dies, have them forfet half of found XP and all found items.
+
+  var currStage = 0;
+
+  //Call preventAdventureIllegalVerbs(userArray,true) to prevent players from preforming illegal actions
+  //while adventuring.
+
+  //Have players travel() to the adventure location.
+  //Once they arrive:
+  for(var i=0;i<loc.challengeStages;i++){
+    challenge(userArray,selectChallenge(loc,currChallengeStage));
+    //Failure states
+    if(currStage <= -1){
+      //adventureRetreat();
+    }
+    //If challengeTPK() was called then adventureDefeat();
+  }
+  //If the for loop ends and no failure states were called, the party must have won!
+  //adventureVictory();
+
+  //If the adventure is done, have players travel() back to their starting location.
 
 }
+
+//selectChallenge(loc,currChallengeStage)
+//Given a location and a challenge stage, select a valid challenge.
+function selectChallenge(loc,curChallengeStage){
+  if(loc.type!="dungeon"){
+    return console.log("Error: " + loc.id + " is not a dungeon.");
+  }
+  //Choose a random challenge from the correct stage.
+  var challengeNum = Math.floor(loc.challenges[currChallengeStage].length * Math.random());
+  return Object.keys(loc.challenges[currChallengeStage].[challengeNum]);
+}
+
+//challenge(userArray,challengeID)
+//Takes an array of user objects and subjects them to a challenge.
+//The users attack() the challenge and defend() against it until the users run out of
+//health or morale, OR the challenge runs out of health.
+function challenge(userArray,challengeID){
+  var challengeHealth = getChallenge(challengeID).health;
+  combatRound(userArray,challengeID)
+  //If a player has their health depleated, challengeKill() that player.
+  //If all party members health gone, then challengeTPK()
+  //If morale gone, then challengeRetreat()
+  //If victory, then challengeVictory()
+  //If no end conditions are met, repeat the combat round once the combat interval timer ends.
+}
+
+//getChallenge(challengeID)
+//Given a challenge ID, return a ref to that challenge.
+function getChallenge(challengeID){
+  for(var i=0;i<challenges.length;i++){
+    if(challengeID===challenges[i].id){
+      return challenges[i];
+    }
+  }
+  return console.log("Error: challengeID " + challengeID + " not found.");
+}
+
+//combatRound(userArray,challengeID)
+//A single round of combat
+function combatRound(userArray,challengeID){
+  attack(userArray,challengeID);
+  //defend(userArray,challengeID)
+}
+
+//attack(userArray,challengeID)
+//Takes an array of users and has them attack a challenge.
+function attack(userArray,challengeID){
+  //Each player attacks the challenge with a random rating.
+  //The chance of what rating is used is determined by how powerful it is relative to the others.
+  for(var i=0;i<userArray.length;i++){
+    var ratingsArray = tabulateRatings(userArray[i]);
+    //Add up the offencive ratings
+    var sumOfWeights = 0;
+    var weightCutoffs = []; //Details which ratings go with which ranges.
+    for(var q=0;q<ratingsArray.length;q++){
+      if(getRatingRef(Object.keys(ratingsArray)[q]).type === "offencive"){
+        sumofWeights + ratingsArray[q];
+        weightCutoffs.push(sumofWeights);
+      }
+    }
+    //Calculate a random number
+    var ratingSelector = Math.random()*sumOfWeights;
+    //Determine which weightCutoff this number belongs to.
+    for(var q=0;q<weightCutoffs.length;q++){
+      if(ratingSelector < weightCutoffs[q]){
+        
+      }
+    }
+  }
+
+  //From there, roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
+  //Do the same for the challenge's defensive ratings. Any attack value that exceeds the def value is dealt as damage
+  //to health.
+}
+
+//defend(userArray,challengeID)
+//Takes an array of users and a challenge and has users get attacked by it.
+function defend(userArray,challengeID){
+
+}
+
+//challengeKill()
 
 //********MISC FUNCTIONS******************
 //createGUID()
@@ -591,4 +694,14 @@ function s4() {
   return Math.floor((1 + Math.random()) * 0x10000)
     .toString(16)
     .substring(1);
+}
+
+//Given a rating ID, return a ref to that rating's data.
+function getRatingRef(ratingID){
+  for(var i=0;i<ratings.length;i++){
+    if(ratingID===ratings[i].id){
+      return ratings[i];
+    }
+  }
+  return console.log("Error: ratingID " + ratingID + " not found.");
 }

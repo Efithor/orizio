@@ -12,8 +12,9 @@
 	  "description" : "A training field outside of Adacross.",
     "type"        : "dungeon",
     "challengeStages" : 1,
+    "CRMod" : 0,
     "challenges" : [
-      [{"trainingDummy"}]
+      [{"trainingDummy" : 1}]
     ],
     "exits"       : ["adacross"]
   },
@@ -23,11 +24,12 @@
 	  "description" : "A natural tower of granite, honycombed with unnatural tunnels.",
     "type"        : "dungeon",
     "challengeStages" : 4,
+    "CRMod" : 1,
     "challenges" : [
-      [{"spireImp"}],
-      [{"minotaur"}],
-      [{"greyPlatoon"}],
-      [{"kingMolagon"}]
+      [{"spireImp" : 1}],
+      [{"minotaur" : 1}],
+      [{"greyPlatoon" : 1}],
+      [{"kingMolagon" : 1}]
     ],
     "exits"       : ["adacross"]
   }

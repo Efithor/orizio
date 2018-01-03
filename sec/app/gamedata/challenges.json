@@ -2,6 +2,7 @@
   {
     "id" : "trainingDummy",
     "displayName" : "Training Dummy",
+    "challengeStage" : 0,
     "offRatings" : [{"blunt" : 2},{"slice" : 0},{"pierce" : 1}],
     "defRatings" : [{"blunt" : 1},{"slice" : 1},{"pierce" : 1}],
     "health" : 20,
@@ -11,6 +12,7 @@
   {
     "id" : "spireImp",
     "displayName" : "Spire Imp",
+    "challengeRating" : 1,
     "offRatings" : [{"blunt" : 3},{"slice" : 2},{"pierce" : 5}],
     "defRatings" : [{"blunt" : 2},{"slice" : 1},{"pierce" : 3}],
     "health" : 20,
@@ -20,6 +22,7 @@
   {
     "id" : "minotaur",
     "displayName" : "Minotaur",
+    "challengeRating" : 2,
     "offRatings" : [{"blunt" : 7},{"slice" : 0},{"pierce" : 0}],
     "defRatings" : [{"blunt" : 4},{"slice" : 4},{"pierce" : 4}],
     "health" : 40,
@@ -29,6 +32,7 @@
   {
     "id" : "greyPlatoon",
     "displayName" : "Grey Platoon",
+    "challengeRating" : 3,
     "offRatings" : [{"blunt" : 0},{"slice" : 5},{"pierce" : 12}],
     "defRatings" : [{"blunt" : 8},{"slice" : 6},{"pierce" : 4}],
     "health" : 80,
@@ -38,6 +42,7 @@
   {
     "id" : "kingMolagon",
     "displayName" : "King Molagon",
+    "challengeRating" : 4,
     "offRatings" : [{"blunt" : 7},{"slice" : 20},{"pierce" : 0}],
     "defRatings" : [{"blunt" : 4},{"slice" : 4},{"pierce" : 4}],
     "health" : 150,
