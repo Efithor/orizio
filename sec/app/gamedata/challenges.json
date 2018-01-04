@@ -6,6 +6,7 @@
     "offRatings" : [{"blunt" : 2},{"slice" : 0},{"pierce" : 1}],
     "defRatings" : [{"blunt" : 1},{"slice" : 1},{"pierce" : 1}],
     "health" : 20,
+    "attacks" : 1,
     "rewards" : [{"nothing" : 1}],
     "XP"  :  1
   }
@@ -16,6 +17,7 @@
     "offRatings" : [{"blunt" : 3},{"slice" : 2},{"pierce" : 5}],
     "defRatings" : [{"blunt" : 2},{"slice" : 1},{"pierce" : 3}],
     "health" : 20,
+    "attacks" : 1,
     "rewards" : [{"nothing" : 1},{"bronzeHammer" : 1},{"bronzeSword" : 1},{"bronzeSpear" : 1}],
     "XP"  :  5
   },
@@ -26,6 +28,7 @@
     "offRatings" : [{"blunt" : 7},{"slice" : 0},{"pierce" : 0}],
     "defRatings" : [{"blunt" : 4},{"slice" : 4},{"pierce" : 4}],
     "health" : 40,
+    "attacks" : 2,
     "rewards" : [{"nothing" : 0.25},{"ironHammer" : 0.25},{"ironSword" : 0.25},{"ironSpear" : 0.25}],
     "XP"  :  10
   },
@@ -36,6 +39,7 @@
     "offRatings" : [{"blunt" : 0},{"slice" : 5},{"pierce" : 12}],
     "defRatings" : [{"blunt" : 8},{"slice" : 6},{"pierce" : 4}],
     "health" : 80,
+    "attacks" : 5,
     "rewards" : [{"nothing" : 0.25},{"steelHammer" : 0.25},{"steelSword" : 0.25},{"steelSpear" : 0.25}],
     "XP"  :  15
   },
@@ -46,6 +50,7 @@
     "offRatings" : [{"blunt" : 7},{"slice" : 20},{"pierce" : 0}],
     "defRatings" : [{"blunt" : 4},{"slice" : 4},{"pierce" : 4}],
     "health" : 150,
+    "attacks" : 3,
     "rewards" : [{"nothing" : 0.25},{"wrathiteHammer" : 0.25},{"wrathiteSword" : 0.25},{"wrathiteSpear" : 0.25}],
     "XP"  :  50
   }

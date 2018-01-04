@@ -663,22 +663,55 @@ function attack(userArray,challengeID){
     //Calculate a random number
     var ratingSelector = Math.random()*sumOfWeights;
     //Determine which weightCutoff this number belongs to.
+    var attackRating;
     for(var q=0;q<weightCutoffs.length;q++){
-      if(ratingSelector < weightCutoffs[q]){
-        
+      if(ratingSelector =< weightCutoffs[q]){
+        attackRating = ratingsArray[q];
+        break;
       }
     }
+    //From there, roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
+    var offRatingMod = 0;
+    for(var q=0;q<chosenRating;q++){
+      if(Math.ceil(Math.random()*3)===3){
+        offRatingMod = offRatingMod+1;
+      }
+    }
+    attackRating = attackRating + offRatingMod;
+    //Do the same for the challenge's defensive ratings.
+    var defRatingID = getRatingRef(Object.keys(attackRating)).defendedBy; //Determine what the challenge should defend with.
+    var defRatingArray = getChallenge(challengeID).defRatings;
+    var defRating;
+    for(var q=0;q<defRatingArray.length;q++){
+      if(defRatingID === Object.keys(defRatingArray)[q]){
+        defRating = defRatingArray[q];
+        break;
+      }
+    }
+    var defRatingMod = 0;
+    for(var q=0;q<defRating;q++){
+      if(Math.ceil(Math.random()*3)===3){
+        defRatingMod = defRatingMod+1;
+      }
+    }
+    defRating = defRatingMod + defRatingMod;
+    //Any attack value that exceeds the def value is dealt as damage to health.
+    if(attackRating > defRating){
+      challengeHealth = challengeHealth - (attackRating - defRating);
+    }
+    console.log(user.local.characterName + " attacks " + challengeID + " with a " + attackRating ". " + challengeID + " defends with a " + defRating "!");
   }
-
-  //From there, roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
-  //Do the same for the challenge's defensive ratings. Any attack value that exceeds the def value is dealt as damage
-  //to health.
 }
 
 //defend(userArray,challengeID)
 //Takes an array of users and a challenge and has users get attacked by it.
 function defend(userArray,challengeID){
+  var challengeRef = getChallenge(challengeID);
+  var attackerRatingArray = challengeRef.offRatings;
+  //Make a number of attacks equal to challengeRef.attacks.
+  for(var i=0; i<challengeRef.attacks;i++){
 
+  }
 }
 
 //challengeKill()
@@ -704,4 +737,24 @@ function getRatingRef(ratingID){
     }
   }
   return console.log("Error: ratingID " + ratingID + " not found.");
+}
+
+//selectKeyFromWeightedArray()
+//Given an array of key-weight pairs, choose a key at random.
+selectKeyFromWeightedArray(weightedArray){
+  //Add up the weights
+  var sumOfWeights = 0;
+  var weightCutoffs = []; //Details which ratings go with which ranges.
+  for(var i=0;i<weightedArray.length;i++){
+      sumOfWeights = sumOfWeights + weightedArray[i];
+      weightCutoffs.push(sumOfWeights);
+  }
+  //Calculate a random number
+  var keySelector = Math.random()*sumOfWeights;
+  //Determine which weightCutoff this number belongs to.
+  for(var i=0;i<weightCutoffs.length;i++){
+    if(keySelector =< weightCutoffs[i]){
+      return Object.keys(weightedArray)[i];
+    }
+  }
 }
