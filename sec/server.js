@@ -527,10 +527,13 @@ function getSkillFromUser(_user,_skillId){
 
 //tabulateRatings()
 //Given a user, output an array of objects for their ratings.
+//Can also check the type section of a rating (i.e. get all offencive ratings).
 //  Outputs [{"ratingName" : "ratingVal"},...]
-function tabulateRatings(user){
+function tabulateRatings(user,ratingType){
   var ratingArray = [];
   for(var i;i<ratings.length;i++){
+    //Check for type specification
+    if(typeof ratingType === "undefined" || ratingType === ratings[i].type){
       var ratingName = Object.keys(ratings[i]);
       //For each linked skill, get a rating. Then use the highest one.
       for(var q;q<ratings[i].linkedSkills.length;q++){
@@ -540,8 +543,8 @@ function tabulateRatings(user){
         var ratingVal = Math.ceil(Math.sqrt(skillVal) * Math.sqrt(itemVal) * weight * 10);
       }
       ratingArray.push({ratingName : ratingVal});
+    }
   }
-
   return ratingArray; //Output array
 }
 
@@ -650,26 +653,9 @@ function attack(userArray,challengeID){
   //Each player attacks the challenge with a random rating.
   //The chance of what rating is used is determined by how powerful it is relative to the others.
   for(var i=0;i<userArray.length;i++){
-    var ratingsArray = tabulateRatings(userArray[i]);
-    //Add up the offencive ratings
-    var sumOfWeights = 0;
-    var weightCutoffs = []; //Details which ratings go with which ranges.
-    for(var q=0;q<ratingsArray.length;q++){
-      if(getRatingRef(Object.keys(ratingsArray)[q]).type === "offencive"){
-        sumofWeights + ratingsArray[q];
-        weightCutoffs.push(sumofWeights);
-      }
-    }
-    //Calculate a random number
-    var ratingSelector = Math.random()*sumOfWeights;
-    //Determine which weightCutoff this number belongs to.
-    var attackRating;
-    for(var q=0;q<weightCutoffs.length;q++){
-      if(ratingSelector =< weightCutoffs[q]){
-        attackRating = ratingsArray[q];
-        break;
-      }
-    }
+    var ratingsArray = tabulateRatings(userArray[i],"offencive"); //Get a weighted array of offencive ratings.
+    var attackRating = selectKeyFromWeightedArray(ratingsArray); //Choose a rating.
+
     //From there, roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
     var offRatingMod = 0;
     for(var q=0;q<chosenRating;q++){
@@ -710,6 +696,20 @@ function defend(userArray,challengeID){
   var attackerRatingArray = challengeRef.offRatings;
   //Make a number of attacks equal to challengeRef.attacks.
   for(var i=0; i<challengeRef.attacks;i++){
+    var challengeAttack = selectKeyFromWeightedArray(attackerRatingArray); //Have the challenge choose an attack.
+    //Roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
+    var offRatingMod = 0;
+    for(var q=0;q<chosenRating;q++){
+      if(Math.ceil(Math.random()*3)===3){
+        offRatingMod = offRatingMod+1;
+      }
+    }
+    challengeAttack = challengeAttack + offRatingMod;
+
+    var userUnderAttack = userArray[Math.ceil(Math.random()*userArray.length)]; //Determine which user to attack.
+    var userUnderAttackDefSkills = tabulateRatings(userUnderAttack,"defencive"); //Grab that user's defence skills
+    var userDefenceRating = userUnderAttackDefSkills.(getRatingRef(Object.keys(challengeAttack)).defendedBy); //Grab the specific def skill we need.
+    
 
   }
 }
@@ -754,7 +754,7 @@ selectKeyFromWeightedArray(weightedArray){
   //Determine which weightCutoff this number belongs to.
   for(var i=0;i<weightCutoffs.length;i++){
     if(keySelector =< weightCutoffs[i]){
-      return Object.keys(weightedArray)[i];
+      return weightedArray[i];
     }
   }
 }
