@@ -131,7 +131,11 @@ io.use(function(socket, next){
       // Move the character
       socket.on('char move', function(destinationID){
         // Check if move is valid.
-        // First find the room the user is in.
+        // If the player is adventuring, they can't move.
+        if(user.local.isAdventuring){
+          return console.log(user.local.characterName + " is unable to move: adventuring.");
+        }
+        // Find the room the user is in.
         var currRoom = getUserRoomRef(user.local.characterLocationID);
         //Ensure that said room has that exit.
         var exitIsValid = false;
@@ -181,8 +185,17 @@ io.use(function(socket, next){
         io.to('priv/' + user.id).emit('data: inventory', user.local.inventory);
       })
 
+      //VERB: GET HEALTH
+      socket.on('getInventory', function(){
+        io.to('priv/' + user.id).emit('data: health', user.local.health);
+      })
+
       //VERB: REMOVE ITEM FROM INVENTORY
       socket.on('discardItem', function(itemGUID){
+        //Ensure user is not adventuring.
+        if(user.local.isAdventuring){
+          return console.log(user.local.characterName + " is unable to discard item: adventuring.");
+        }
         removeItemFromInventory(user, itemGUID);
         io.to('priv/' + user.id).emit('data: inventory', user.local.inventory.);
       })
@@ -190,6 +203,10 @@ io.use(function(socket, next){
       //VERB: EQUIP ITEM
       //Move an item from inventory to equipped.
       socket.on('equipItem', function(itemGUID){
+        //Ensure user is not adventuring.
+        if(user.local.isAdventuring){
+          return console.log(user.local.characterName + " is unable to equip: adventuring.");
+        }
         moveItemFromInventoryToEquipment(user, itemGUID);
         io.to('priv/' + user.id).emit('data: inventory', user.local.inventory.);
         io.to('priv/' + user.id).emit('data: equipment', user.local.equipment);
@@ -198,6 +215,10 @@ io.use(function(socket, next){
       //VERB: UNQUIP ITEM
       //Move an item from equipped to inventory.
       socket.on('unequipItem', function(itemGUID){
+        //Ensure user is not adventuring.
+        if(user.local.isAdventuring){
+          return console.log(user.local.characterName + " is unable to unequip: adventuring.");
+        }
         moveItemFromEquipmentToInventory(user, itemGUID);
         io.to('priv/' + user.id).emit('data: inventory', user.local.inventory.);
         io.to('priv/' + user.id).emit('data: equipment', user.local.equipment);
@@ -206,7 +227,7 @@ io.use(function(socket, next){
       //VERB: GET EQUIPMENT
       // Pass an object to the client listing their equipment.
       socket.on('getEquipment', function(){
-        io.to('priv/' + user.id).emit('data: equipment', user.local.equipment);
+        io.to('priv/' + user.id).emit('data: equipment', user.local.characterEquipment);
       })
       //VERB: GET SKILLS
       // Pass an object to the client listing their skills.
@@ -480,14 +501,28 @@ function manifestPlayerCharacter(_user,_socket){
   io.to('priv/' + user.id).emit('chat message', getUserRoomRef(user.local.characterLocationID).description);
 }
 
-//setupCharacterSkills()_
+//setupStats
+//Setup any stats the player character might have.
+//Right now it's just health.
+function setupStats(user){
+  if(typeof user.health === "undefined" || user.health < 0){
+    user.health = 100;
+    user.save(function(err) {
+        if (err)
+            throw err;
+        return null;
+    });
+  }
+}
+
+//setupCharacterSkills()
 //Given a user, if they're missing any skills, set those to 1.
 function setupCharacterSkills(_user){
   var user = _user;
   var skillArray = Object.keys(skills.id);
   //If there are any skills in skills.json that are not in the user profile, add them.
   for(var i=0;i<skills.length;i++){
-    if(getSkillFromUser(user, skillArray[i])===-1){
+    if(getSkillXPFromUser(user, skillArray[i])===-1){
       user.local.characterSkills.push({playerSkillArray[i]):1}); //Set that skill to 1.
     }
   }
@@ -511,9 +546,9 @@ function setupCharacterSkills(_user){
   });
 }
 
-//getSkillFromUser()
-//Given a user and a skill id, return the value of the skill. -1 if no skill.
-function getSkillFromUser(_user,_skillId){
+//getSkillXPFromUser()
+//Given a user and a skill id, return the XP total of the skill. -1 if no skill.
+function getSkillXPFromUser(_user,_skillId){
   var user = _user;
   var skillId = _skillId;
   var playerSkillArray = Object.keys(user.local.characterSkills);
@@ -523,6 +558,12 @@ function getSkillFromUser(_user,_skillId){
     }
   }
   return -1;
+}
+
+//getSkillLevel()
+//Given an XP value, return the level associated with it.
+function getSkillLevel(val){
+  return Math.floor(Math.sqrt(val/10));
 }
 
 //tabulateRatings()
@@ -537,7 +578,7 @@ function tabulateRatings(user,ratingType){
       var ratingName = Object.keys(ratings[i]);
       //For each linked skill, get a rating. Then use the highest one.
       for(var q;q<ratings[i].linkedSkills.length;q++){
-        var skillVal = getSkillFromUser(user,Object.keys(ratings[i].linkedSkills)[q]);
+        var skillVal = getSkillLevel(getSkillXPFromUser(user,Object.keys(ratings[i].linkedSkills)[q]));
         var itemVal = tabulateLinkedItems(user,Object.keys(ratings[i].linkedSkills)[q]);
         var weight = ratings[i].linkedSkills[q];
         var ratingVal = Math.ceil(Math.sqrt(skillVal) * Math.sqrt(itemVal) * weight * 10);
@@ -549,7 +590,7 @@ function tabulateRatings(user,ratingType){
 }
 
 //tabulateLinkedItems()
-//Given a user and a skill, return the added power  of all equipped items that are linked to that skill.
+//Given a user and a skill, return the added power of all equipped items that are linked to that skill.
 function tabulateLinkedItems(user,skillID){
   var totalPower = 0;
   //Find all linked linkedClasses
@@ -568,6 +609,64 @@ function tabulateLinkedItems(user,skillID){
   return totalPower;
 }
 
+//listActiveWeaponClasses()
+//Given a user, return an array listing the IDs for all the classes they have equipment for.
+function listEquippedWeaponClasses(user){
+  var equippedClasses = [];
+  for(var i=0;i<user.local.characterEquipment.length;i++){
+    //Get the skill.
+    var classInQuestion = getClassofEquipment(user.local.characterEquipment[p].typeID)
+    //ensure the skill isn't already on the array.
+    var inArray = false;
+    for(var q=0;q<activeSkills.length;q++){
+      if(classInQuestion===equippedClasses[q]){
+        inArray = true;
+        break;
+      }
+    }
+    if(inArray){
+      equippedClasses.push(skillInQuestion);
+    }
+  }
+  return equippedClasses;
+}
+
+//damagePlayer()
+//Takes a user and an int and applies damage to that player.
+function damagePlayer(user,damageVal){
+  user.local.health = user.local.health - damageVal;
+  user.save(function(err) {
+      if (err)
+          console.log(err);
+      return null;
+  });
+}
+
+//setAdventuringTag()
+//Takes an array of users and a boolean. If the boolean is true, ascribe the adventuring tag to the profile.
+function setAdventuringTag(userArray,isAdventuring){
+  for(var i=0;i<userArray.length;i++){
+    user.local.adventureTag = isAdventuring;
+    user.save(function(err) {
+        if (err)
+            console.log(err);
+        return null;
+    });
+  }
+}
+
+//giveXP()
+//Takes a user, a skill, and a value.
+//Adds XP to that skill.
+function addXP(user,skillID,val){
+  for(var i=0;i<user.local.characterSkills.length;i++){
+    if(Object.keys(user.local.characterSkills[i]) === skillID){
+      user.local.characterSkills[i] = user.local.characterSkills[i] + val;
+      break;
+    }
+  }
+}
+
 //*********ADVENTURE FUNCTIONS************
 //adventure()
 //Given a dungeon room, adventure in that room.
@@ -583,26 +682,74 @@ function adventure(userArray, loc){
   }
 
   var currStage = 0;
-
+  var itemRewardArray = [];
+  var xpRewardArray = [];
+  var livePlayerArray = userArray;
+  var userKilledArray = []; //Takes a user.id and an int, where the in is the challenge state the user died on.
   //Call preventAdventureIllegalVerbs(userArray,true) to prevent players from preforming illegal actions
   //while adventuring.
-
+  setAdventuringTag(userArray,true);
   //Have players travel() to the adventure location.
   //Once they arrive:
   for(var i=0;i<loc.challengeStages;i++){
     challenge(userArray,selectChallenge(loc,currChallengeStage));
-    //Failure states
-    if(currStage <= -1){
-      //adventureRetreat();
+    //Adventure Failure state
+    if(currStage <= -1 || partyDead(userArray)){
+      adventureRetreat(userArray);
     }
-    //If challengeTPK() was called then adventureDefeat();
   }
-  //If the for loop ends and no failure states were called, the party must have won!
-  //adventureVictory();
+  //If the for loop ends and no failure states were called, the party must have survived the adventure.
+  adventureVictory(userArray);
 
   //If the adventure is done, have players travel() back to their starting location.
 
 }
+
+function adventureRetreat(userArray){
+  rewardPlayers(userArray,"retreat");
+  setAdventuringTag(userArray, false);
+  console.log("The group lead by " + userArray[i] + " was forced to retreat.");
+}
+
+function adventureVictory(userArray){
+  rewardPlayers(userArray,"victory");
+  setAdventuringTag(userArray, false);
+  console.log("The group lead by " + userArray[i] + " survived.");
+}
+
+//rewardPlayers(userArray,rewardType)
+//For now, distribute items to everyone and reward type doesn't actually do anything.
+function rewardPlayers(userArray,rewardType){
+  for(var i=0;i<userArray.length;i++){
+    var userKilledOnStage = wasUserKilled(userArray[i])
+    if(userKilledOnStage === false){
+      //For every tablulated item value over 0, apply the xp total to those skills.
+      //i.e. If someone has two swords and one chain armor, give XP for swords and chain armor evenly.
+      for(var q=0;q<skills.length;q++){
+        if(tabulateLinkedItems(skill[q].id)>0){
+          giveXP(userArray[i],skill[q],xpRewardArray.reduce(getSum));
+        }
+      }
+      //Give player all item drops.
+      for(var q=0;q<itemRewardArray;q++){
+        if(itemRewardArray[q]!="nothing"){
+          addItem(userArray[i],itemRewardArray[q]);
+        }
+      }
+    }else{
+      var xpTotal = 0;
+      for(var q=0;q<userKilledOnStage;q++){
+        xpTotal = xpTotal + xpRewardArray[q];
+      }
+      for(var q=0;q<skills.length;q++){
+        if(tabulateLinkedItems(skill[q].id)>0){
+          giveXP(userArray[i],skill[q],Math.ceil(xpTotal/4));
+        }
+      }
+    }
+  }
+}
+
 
 //selectChallenge(loc,currChallengeStage)
 //Given a location and a challenge stage, select a valid challenge.
@@ -620,13 +767,10 @@ function selectChallenge(loc,curChallengeStage){
 //The users attack() the challenge and defend() against it until the users run out of
 //health or morale, OR the challenge runs out of health.
 function challenge(userArray,challengeID){
-  var challengeHealth = getChallenge(challengeID).health;
-  combatRound(userArray,challengeID)
-  //If a player has their health depleated, challengeKill() that player.
-  //If all party members health gone, then challengeTPK()
-  //If morale gone, then challengeRetreat()
-  //If victory, then challengeVictory()
-  //If no end conditions are met, repeat the combat round once the combat interval timer ends.
+    var challengeHealth = getChallenge(challengeID).health;
+    var partyMorale = 100;
+    var combatResult = combatRound(userArray,challengeID);
+
 }
 
 //getChallenge(challengeID)
@@ -644,7 +788,31 @@ function getChallenge(challengeID){
 //A single round of combat
 function combatRound(userArray,challengeID){
   attack(userArray,challengeID);
-  //defend(userArray,challengeID)
+  defend(userArray,challengeID);
+  //Check if a player has died.
+  //If a player has their health depleated, challengeKill() that player.
+  for(var i=0;i<userArray.length;i++){
+    if(userArray[i].local.health <= 0){
+      challengeKill(userArray[i]);
+    }
+  }
+  //Check for end conditions, if there are any, return.
+  //If all players are dead, TPK the party.
+  if(isPartyDead()){
+    challengeTPK();
+  }
+  //If morale gone, then challengeRetreat()
+  if(partyMorale<=0){
+    challengeRetreat(userArray);
+  }
+  //If victory, then challengeVictory()
+  if(challengeHealth<=0){
+    challengeVictory(userArray);
+  }
+
+
+  //Otherwise, engage in next round of combat.
+  combatRound(userArray,challengeID);
 }
 
 //attack(userArray,challengeID)
@@ -706,15 +874,45 @@ function defend(userArray,challengeID){
     }
     challengeAttack = challengeAttack + offRatingMod;
 
-    var userUnderAttack = userArray[Math.ceil(Math.random()*userArray.length)]; //Determine which user to attack.
+    var userUnderAttack = userArray[Math.ceil(Math.random()*userArray.length)]; //Determine which user to attack from the live player list.
     var userUnderAttackDefSkills = tabulateRatings(userUnderAttack,"defencive"); //Grab that user's defence skills
     var userDefenceRating = userUnderAttackDefSkills.(getRatingRef(Object.keys(challengeAttack)).defendedBy); //Grab the specific def skill we need.
-    
+    //Roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
+    var defRatingMod = 0;
+    for(var q=0;q<userDefenceRating;q++){
+      if(Math.ceil(Math.random()*3)===3){
+        defRatingMod = defRatingMod+1;
+      }
+    }
+    userDefenceRating = userDefenceRating + defRatingMod;
+    if(challengeAttack > userDefenceRating){
+      damagePartyMorale(challengeAttack-userDefenceRating);
+      damagePlayer(userUnderAttack,(challengeAttack-userDefenceRating));
+      //Check if player was killed by this attack.
+      if(userUnderAttack.local.health<=0){
 
+      }
+    }
   }
 }
 
 //challengeKill()
+//Given a player in a challenge, take them off the live player list and put them on the dead player list.
+//The dead player list consists of their user ID and an int describing what stage they died on.
+function challengeKill(user){
+
+}
+
+//challengeTPK()
+//Given a party, kill them.
+function challengeTPK(){
+
+}
+
+//damagePartyMorale()
+function damagePartyMorale(damageVal){
+    partyMorale = partyMorale - damageVal;
+}
 
 //********MISC FUNCTIONS******************
 //createGUID()
@@ -757,4 +955,8 @@ selectKeyFromWeightedArray(weightedArray){
       return weightedArray[i];
     }
   }
+}
+//Get a sum
+function getSum(total, num) {
+    return total + num;
 }

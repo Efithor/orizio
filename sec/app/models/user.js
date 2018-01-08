@@ -23,7 +23,9 @@ var userSchema = mongoose.Schema({
     characterLocationID : Object,
     characterInventory  : Object,
     characterSkills     : Object,
-    characterEquipment  : Object
+    characterEquipment  : Object,
+    health              : Object,
+    adventuringTag      : Boolean
   },
   google        : {
     id          : String,
