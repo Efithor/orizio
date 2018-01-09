@@ -243,6 +243,7 @@ io.use(function(socket, next){
       return user;
     });
 });
+
 // launch
 server.listen(3000, function(){
   console.log('chat listening on :3000');
@@ -250,6 +251,14 @@ server.listen(3000, function(){
 
 app.listen(port);
 console.log('Auth listening on ' + port);
+
+//****************************************
+//******** CONSTANT ACTIONS **************
+//****************************************
+
+//Every minute, give each user 1 HP.
+setInterval(restoreEveryUsersHealth(1),60000);
+
 
 //****************************************
 //*********FUNCTIONS**********************
@@ -642,6 +651,20 @@ function damagePlayer(user,damageVal){
   });
 }
 
+function restoreEveryUsersHealth(healval){
+  for(var i=0;i<userAll.length;i++){
+    if(userAll[i].local.health < 100){
+      user.local.health = user.local.health + damageVal;
+      user.save(function(err) {
+          if (err)
+              console.log(err);
+          return null;
+      });  
+    }
+  }
+}
+
+
 //setAdventuringTag()
 //Takes an array of users and a boolean. If the boolean is true, ascribe the adventuring tag to the profile.
 function setAdventuringTag(userArray,isAdventuring){
@@ -666,6 +689,7 @@ function addXP(user,skillID,val){
     }
   }
 }
+
 
 //*********ADVENTURE FUNCTIONS************
 //adventure()
@@ -694,7 +718,7 @@ function adventure(userArray, loc){
   for(var i=0;i<loc.challengeStages;i++){
     challenge(userArray,selectChallenge(loc,currChallengeStage));
     //Adventure Failure state
-    if(currStage <= -1 || partyDead(userArray)){
+    if(currStage <= -1 || livePlayerArray.length === 0){
       adventureRetreat(userArray);
     }
   }
@@ -787,8 +811,8 @@ function getChallenge(challengeID){
 //combatRound(userArray,challengeID)
 //A single round of combat
 function combatRound(userArray,challengeID){
-  attack(userArray,challengeID);
-  defend(userArray,challengeID);
+  attack(livePlayerArray,challengeID);
+  defend(livePlayerArray,challengeID);
   //Check if a player has died.
   //If a player has their health depleated, challengeKill() that player.
   for(var i=0;i<userArray.length;i++){
@@ -798,8 +822,8 @@ function combatRound(userArray,challengeID){
   }
   //Check for end conditions, if there are any, return.
   //If all players are dead, TPK the party.
-  if(isPartyDead()){
-    challengeTPK();
+  if(livePlayerArray.length = 0){
+    challengeRetreat(userArray);
   }
   //If morale gone, then challengeRetreat()
   if(partyMorale<=0){
@@ -817,11 +841,11 @@ function combatRound(userArray,challengeID){
 
 //attack(userArray,challengeID)
 //Takes an array of users and has them attack a challenge.
-function attack(userArray,challengeID){
+function attack(livePlayerArray,challengeID){
   //Each player attacks the challenge with a random rating.
   //The chance of what rating is used is determined by how powerful it is relative to the others.
-  for(var i=0;i<userArray.length;i++){
-    var ratingsArray = tabulateRatings(userArray[i],"offencive"); //Get a weighted array of offencive ratings.
+  for(var i=0;i<livePlayerArray.length;i++){
+    var ratingsArray = tabulateRatings(livePlayerArray[i],"offencive"); //Get a weighted array of offencive ratings.
     var attackRating = selectKeyFromWeightedArray(ratingsArray); //Choose a rating.
 
     //From there, roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
@@ -874,7 +898,7 @@ function defend(userArray,challengeID){
     }
     challengeAttack = challengeAttack + offRatingMod;
 
-    var userUnderAttack = userArray[Math.ceil(Math.random()*userArray.length)]; //Determine which user to attack from the live player list.
+    var userUnderAttack = livePlayerArray[Math.ceil(Math.random()*livePlayerArray.length)]; //Determine which user to attack from the live player list.
     var userUnderAttackDefSkills = tabulateRatings(userUnderAttack,"defencive"); //Grab that user's defence skills
     var userDefenceRating = userUnderAttackDefSkills.(getRatingRef(Object.keys(challengeAttack)).defendedBy); //Grab the specific def skill we need.
     //Roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
@@ -890,7 +914,7 @@ function defend(userArray,challengeID){
       damagePlayer(userUnderAttack,(challengeAttack-userDefenceRating));
       //Check if player was killed by this attack.
       if(userUnderAttack.local.health<=0){
-
+        challengeKill(userUnderAttack);
       }
     }
   }
@@ -900,13 +924,12 @@ function defend(userArray,challengeID){
 //Given a player in a challenge, take them off the live player list and put them on the dead player list.
 //The dead player list consists of their user ID and an int describing what stage they died on.
 function challengeKill(user){
-
-}
-
-//challengeTPK()
-//Given a party, kill them.
-function challengeTPK(){
-
+  for(var i=0;i<livePlayerArray.length;i++){
+    if(livePlayerArray[i].id===user.id){
+      livePlayerArray.splice(i,1);
+      userKilledArray.push({user.id:currStage});
+    }
+  }
 }
 
 //damagePartyMorale()
