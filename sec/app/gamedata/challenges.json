@@ -9,7 +9,7 @@
     "attacks" : 1,
     "rewards" : [{"nothing" : 1}],
     "XP"  :  1
-  }
+  },
   {
     "id" : "spireImp",
     "displayName" : "Spire Imp",

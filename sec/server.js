@@ -197,7 +197,7 @@ io.use(function(socket, next){
           return console.log(user.local.characterName + " is unable to discard item: adventuring.");
         }
         removeItemFromInventory(user, itemGUID);
-        io.to('priv/' + user.id).emit('data: inventory', user.local.inventory.);
+        io.to('priv/' + user.id).emit('data: inventory', user.local.characterInventory);
       })
 
       //VERB: EQUIP ITEM
@@ -208,8 +208,8 @@ io.use(function(socket, next){
           return console.log(user.local.characterName + " is unable to equip: adventuring.");
         }
         moveItemFromInventoryToEquipment(user, itemGUID);
-        io.to('priv/' + user.id).emit('data: inventory', user.local.inventory.);
-        io.to('priv/' + user.id).emit('data: equipment', user.local.equipment);
+        io.to('priv/' + user.id).emit('data: inventory', user.local.characterInventory);
+        io.to('priv/' + user.id).emit('data: equipment', user.local.characterEquipment);
       })
 
       //VERB: UNQUIP ITEM
@@ -220,8 +220,8 @@ io.use(function(socket, next){
           return console.log(user.local.characterName + " is unable to unequip: adventuring.");
         }
         moveItemFromEquipmentToInventory(user, itemGUID);
-        io.to('priv/' + user.id).emit('data: inventory', user.local.inventory.);
-        io.to('priv/' + user.id).emit('data: equipment', user.local.equipment);
+        io.to('priv/' + user.id).emit('data: inventory', user.local.characterInventory);
+        io.to('priv/' + user.id).emit('data: equipment', user.local.characterEquipment);
       })
 
       //VERB: GET EQUIPMENT
@@ -307,7 +307,7 @@ function doesUserHaveItemEquipped(user,itemGUID){
 //Remove an item from a user's inventory.
 function removeItemFromInventory(user, itemToRemoveGUID){
   if(!doesUserHaveItem(user,itemToRemoveGUID)){
-    return console.log(user.local.username + ' cannot discard ' + itemToRemoveGUID '. Item not found.');
+    return console.log(user.local.username + ' cannot discard ' + itemToRemoveGUID + '. Item not found.');
   }
   user.local.characterInventory.filter(function(el) {
     return el.itemGUID === itemToRemoveGUID;
@@ -319,7 +319,7 @@ function removeItemFromInventory(user, itemToRemoveGUID){
 //Remove an item from a user's equipment.
 function removeItemFromEquipment(user, itemToRemoveGUID){
   if(!doesUserHaveItemEquipped(user,itemToRemoveGUID)){
-    return console.log(user.local.username + ' cannot remove ' + itemToRemoveGUID '. Item not found.');
+    return console.log(user.local.username + ' cannot remove ' + itemToRemoveGUID + '. Item not found.');
   }
   user.local.characterEquipment.filter(function(el) {
     return el.itemGUID === itemToRemoveGUID;
@@ -532,7 +532,8 @@ function setupCharacterSkills(_user){
   //If there are any skills in skills.json that are not in the user profile, add them.
   for(var i=0;i<skills.length;i++){
     if(getSkillXPFromUser(user, skillArray[i])===-1){
-      user.local.characterSkills.push({playerSkillArray[i]):1}); //Set that skill to 1.
+      var skillToPush = skillArray[i];
+      user.local.characterSkills.push({skillToPush:1}); //Set that skill to 1.
     }
   }
   //If there are any orphaned skills, remove those.
@@ -651,15 +652,15 @@ function damagePlayer(user,damageVal){
   });
 }
 
-function restoreEveryUsersHealth(healval){
+function restoreEveryUsersHealth(healVal){
   for(var i=0;i<userAll.length;i++){
     if(userAll[i].local.health < 100){
-      user.local.health = user.local.health + damageVal;
+      user.local.health = user.local.health + healVal;
       user.save(function(err) {
           if (err)
               console.log(err);
           return null;
-      });  
+      });
     }
   }
 }
@@ -690,6 +691,54 @@ function addXP(user,skillID,val){
   }
 }
 
+//travel()
+//Takes a user and a location.
+//Has the user travel to the new location.
+function travel(user,destination){
+  // Check if move is valid.
+  // If the player is adventuring, they can't move.
+  if(user.local.isAdventuring){
+    return console.log(user.local.characterName + " is unable to move: adventuring.");
+  }
+  // Find the room the user is in.
+  var currRoom = getUserRoomRef(user.local.characterLocationID);
+  //Ensure that said room has that exit.
+  var exitIsValid = false;
+  for(var i=0;i<currRoom.exits.length;i++){
+    if(currRoom.exits[i]===destinationID){
+      exitIsValid = true;
+      break;
+    }
+  }
+  if(!exitIsValid){
+    return console.log('Exit ' + destinationID + ' is invalid.');
+  }
+  // If so, update the character's position in the database and send them a message.
+  user.local.characterLocationID = destinationID;
+  user.save(function(err) {
+      if (err)
+          throw err;
+      return null;
+  });
+  socket.leave('room/'+currRoom.id);
+  emitUsersInRoomList(currRoom.id);
+  io.to('room/'+currRoom.id).emit('chat message',user.local.characterName + ' exits the ' + currRoom.displayName);
+  currRoom = getUserRoomRef(user.local.characterLocationID);
+  if(currRoom.type==="plaza"){
+    io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' walks into the ' + currRoom.displayName);
+    socket.join('room/'+user.local.characterLocationID);
+    emitUsersInRoomList(user.local.characterLocationID);
+    console.log(user.local.email + ' has moved to ' + destinationID);
+    io.to('priv/' + user.id).emit('data: validExits', currRoom.exits);
+    io.to('priv/' + user.id).emit('data: currRoom', currRoom.id);
+    io.to('priv/' + user.id).emit('chat message', 'You move to the ' + currRoom.displayName);
+    io.to('priv/' + user.id).emit('chat message', currRoom.description);
+  }
+  if(currRoom.type==="dungeon"){
+    adventure(user, currRoom.id);
+  }
+
+}
 
 //*********ADVENTURE FUNCTIONS************
 //adventure()
@@ -783,7 +832,7 @@ function selectChallenge(loc,curChallengeStage){
   }
   //Choose a random challenge from the correct stage.
   var challengeNum = Math.floor(loc.challenges[currChallengeStage].length * Math.random());
-  return Object.keys(loc.challenges[currChallengeStage].[challengeNum]);
+  return Object.keys(loc.challenges[currChallengeStage][challengeNum]);
 }
 
 //challenge(userArray,challengeID)
@@ -793,8 +842,7 @@ function selectChallenge(loc,curChallengeStage){
 function challenge(userArray,challengeID){
     var challengeHealth = getChallenge(challengeID).health;
     var partyMorale = 100;
-    var combatResult = combatRound(userArray,challengeID);
-
+    var combat = setInterval(combatRound(userArray,challengeID),1000);
 }
 
 //getChallenge(challengeID)
@@ -833,10 +881,6 @@ function combatRound(userArray,challengeID){
   if(challengeHealth<=0){
     challengeVictory(userArray);
   }
-
-
-  //Otherwise, engage in next round of combat.
-  combatRound(userArray,challengeID);
 }
 
 //attack(userArray,challengeID)
@@ -877,7 +921,7 @@ function attack(livePlayerArray,challengeID){
     if(attackRating > defRating){
       challengeHealth = challengeHealth - (attackRating - defRating);
     }
-    console.log(user.local.characterName + " attacks " + challengeID + " with a " + attackRating ". " + challengeID + " defends with a " + defRating "!");
+    console.log(user.local.characterName + " attacks " + challengeID + " with a " + attackRating + ". " + challengeID + " defends with a " + defRating + "!");
   }
 }
 
@@ -900,7 +944,8 @@ function defend(userArray,challengeID){
 
     var userUnderAttack = livePlayerArray[Math.ceil(Math.random()*livePlayerArray.length)]; //Determine which user to attack from the live player list.
     var userUnderAttackDefSkills = tabulateRatings(userUnderAttack,"defencive"); //Grab that user's defence skills
-    var userDefenceRating = userUnderAttackDefSkills.(getRatingRef(Object.keys(challengeAttack)).defendedBy); //Grab the specific def skill we need.
+    var defSkill = (getRatingRef(Object.keys(challengeAttack)).defendedBy);
+    var userDefenceRating = userUnderAttackDefSkills.defSkill; //Grab the specific def skill we need.
     //Roll a number of d3s equal to the rating in question and for every 3, add 1 to the rating.
     var defRatingMod = 0;
     for(var q=0;q<userDefenceRating;q++){
@@ -927,7 +972,8 @@ function challengeKill(user){
   for(var i=0;i<livePlayerArray.length;i++){
     if(livePlayerArray[i].id===user.id){
       livePlayerArray.splice(i,1);
-      userKilledArray.push({user.id:currStage});
+      var userKilledID = user.id;
+      userKilledArray.push({userKilledID:currStage});
     }
   }
 }
@@ -935,6 +981,24 @@ function challengeKill(user){
 //damagePartyMorale()
 function damagePartyMorale(damageVal){
     partyMorale = partyMorale - damageVal;
+}
+
+//challengeRetreat(userArray)
+//Have players retreat from a challenge.
+function challengeVictory(userArray){
+  //End the combat timer.
+  clearInterval(combat);
+  //Increase the stage.
+  currStage++;
+}
+
+//challengeRetreat(userArray)
+//Have players retreat from a challenge.
+function challengeRetreat(userArray){
+  //End the combat timer.
+  clearInterval(combat);
+  //Decrease the stage.
+  currStage--;
 }
 
 //********MISC FUNCTIONS******************
@@ -962,7 +1026,7 @@ function getRatingRef(ratingID){
 
 //selectKeyFromWeightedArray()
 //Given an array of key-weight pairs, choose a key at random.
-selectKeyFromWeightedArray(weightedArray){
+function selectKeyFromWeightedArray(weightedArray){
   //Add up the weights
   var sumOfWeights = 0;
   var weightCutoffs = []; //Details which ratings go with which ranges.
@@ -974,11 +1038,12 @@ selectKeyFromWeightedArray(weightedArray){
   var keySelector = Math.random()*sumOfWeights;
   //Determine which weightCutoff this number belongs to.
   for(var i=0;i<weightCutoffs.length;i++){
-    if(keySelector =< weightCutoffs[i]){
+    if(keySelector <= weightCutoffs[i]){
       return weightedArray[i];
     }
   }
 }
+
 //Get a sum
 function getSum(total, num) {
     return total + num;
