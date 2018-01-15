@@ -176,6 +176,8 @@ io.use(function(socket, next){
       })
       //VERB: DISCONNECT
       socket.on('disconnect', function(){
+        //Record time of disconnect in server time.
+        user.timeLastLoggedOut = new Date();
         //Update localFolksList for the left room
         io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' vanishes from the ' + getUserRoomRef(user.local.characterLocationID).displayName);
         emitUsersInRoomList(user.local.characterLocationID);
@@ -257,8 +259,8 @@ console.log('Auth listening on ' + port);
 //******** CONSTANT ACTIONS **************
 //****************************************
 
-//Every minute, give each user 1 HP.
-setInterval(restoreEveryUsersHealth(1),60000);
+//Every minute, give each logged in user 1 HP.
+setInterval(restoreEveryUsersHealth(1,User),60000);
 
 
 //****************************************
@@ -414,6 +416,7 @@ function moveItemFromEquipmentToInventory(user, itemToMoveGUID){
   }
 }
 
+
 //*********LOCATION FUNCTIONS*************
 //getUserRoomRef()
 //Given a user, return a ref to the room they're in.
@@ -498,6 +501,8 @@ function manifestPlayerCharacter(_user,_socket){
         return null;
     });
   };
+  //Give the user HP, dependant on the time they have been logged out.
+
   //Have the user join the channel for the room they're standing in.
   io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' manifests into the ' + getUserRoomRef(user.local.characterLocationID).displayName);
   socket.join('room/'+user.local.characterLocationID);
@@ -653,19 +658,11 @@ function damagePlayer(user,damageVal){
   });
 }
 
-function restoreEveryUsersHealth(healVal){
-  for(var i=0;i<userAll.length;i++){
-    if(userAll[i].local.health < 100){
-      user.local.health = user.local.health + healVal;
-      user.save(function(err) {
-          if (err)
-              console.log(err);
-          return null;
-      });
-    }
-  }
-}
+//healPlayer()
+//Takes a user and an int and adds health to that player, up to their max health.
+function healPlayer(){
 
+}
 
 //setAdventuringTag()
 //Takes an array of users and a boolean. If the boolean is true, ascribe the adventuring tag to the profile.
@@ -690,6 +687,22 @@ function addXP(user,skillID,val){
       break;
     }
   }
+}
+
+//giveHealthToAllLoggedInPlayers()
+
+function giveHealthToAllLoggedInPlayers(){
+
+}
+
+//giveHealthGainedWhileLoggedOut()
+//Given a user, calculate how much health they should have, given the number of minutes they have been logged out.
+//Called when a user logs in.
+function giveHealthGainedWhileLoggedOut(userInQuestion){
+  var currTime = new Date().getTime();
+  var timeOfLastLogout = userInQuestion.timeLastLoggedOut.getTime();
+  var healthToGive = Math.floor((currTime-timeOfLastLogout)/1000);
+  healPlayer(userInQuestion,healthToGive);
 }
 
 //travel()
@@ -1048,4 +1061,12 @@ function selectKeyFromWeightedArray(weightedArray){
 //Get a sum
 function getSum(total, num) {
     return total + num;
+}
+
+//Get an array of all logged-in users.
+function getLoggedInUserMap(userModel){
+  var loggInUserMap = {};
+
+  console.log(loggInUserMap);
+  return loggInUserMap;
 }

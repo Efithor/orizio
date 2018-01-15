@@ -15,6 +15,7 @@ var userSchema = mongoose.Schema({
     //Account info
     email             : String,
     password          : String,
+    timeLastLoggedOut : Object,
     //Flags
     characterCreated  : Boolean,
     accountBanned     : Boolean,
@@ -24,6 +25,7 @@ var userSchema = mongoose.Schema({
     characterInventory  : Object,
     characterSkills     : Object,
     characterEquipment  : Object,
+    maxHealth           : Object,
     health              : Object,
     adventuringTag      : Boolean
   },
