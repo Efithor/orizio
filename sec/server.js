@@ -21,12 +21,13 @@ var secretFile = require('./config/secret.js');
 var configDB = require('./config/database.js');
 //Load gamedata
 var challenges = require('./app/gamedata/challenges.json');
+var itemClasses = require('./app/gamedata/itemClasses.json');
 var items = require('./app/gamedata/items.json');
 var places = require('./app/gamedata/places.json');
 var ratings = require('./app/gamedata/ratings.json');
 var skills = require('./app/gamedata/skills.json');
 
-var checkData = require('./app/datachecks.js');
+var dataCheck = require('./app/datachecks.js');
 
 var orizioConfig = require('./config/orizioConfig.json')
 var server = require('http').Server(app);
@@ -57,7 +58,7 @@ app.use(express.static('public'));
 require('./app/routes.js')(app, passport); // load our routes and pass in our app and fully configured passport
 
 //Ensure Gamedata is valid.
-datacheck.checkData(challenges,items,places,ratings,skills);
+dataCheck.checkData(challenges,itemClasses,items,places,ratings,skills);
 
 //Socket section
 io.use(function(socket, next){

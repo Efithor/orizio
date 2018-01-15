@@ -1,29 +1,29 @@
-module.exports = {
+module.exports.checkData = checkData;
 
   function checkData(_challenges,_itemClasses,_items,_places,_ratings,_skills){
     var challenges = _challenges;
-    var itemClasses = _itemsClasses;
+    var itemClasses = _itemClasses;
     var items = _items;
     var places = _places;
     var ratings = _ratings;
     var skills = _skills;
 
     //Validate items file
-    checkItems(items);
+    checkItems(items,itemClasses);
     //Validate skills file.
-    checkSkills(skills);
+    checkSkills(skills,itemClasses);
     //Validate ratings file.
-    checkRatings(ratings);
+    checkRatings(ratings,skills);
     //Validate challenges file.
-    checkChallenges(challenges);
+    checkChallenges(challenges,ratings,items);
     //Validate places file.
     checkPlaces(places);
 
     console.log('All data validated.');
   }
-}
 
-function checkItems(_items){
+
+function checkItems(_items,itemClasses){
   var items = _items;
   //Ensure no duplicate items.
   for(var i=0;i<items.length;i++){
@@ -44,7 +44,7 @@ function checkItems(_items){
         throw console.log('Error: Weapon Class for'+ items[i].id + 'is Invalid.')
   }
 }
-function checkSkills(_skills){
+function checkSkills(_skills,itemClasses){
   var skills = _skills;
   //Ensure no duplicate skills
   for(var i=0;i<skills.length;i++){
@@ -58,7 +58,7 @@ function checkSkills(_skills){
     for(var t=0;t<skills[i].linkedClasses.length;t++){
       var classIsValid = false;
       for(var s=0;s<itemClasses.length;s++){
-        if(skills[i].linkedClasses[t]===itemClasses[s].id){
+        if(skills[i].linkedClasses[t]===itemClasses[s]){
           classIsValid = true;
         }
       }
@@ -67,7 +67,7 @@ function checkSkills(_skills){
     }
   }
 }
-function checkRatings(_ratings){
+function checkRatings(_ratings,skills){
   var ratings = _ratings;
   //Ensure no duplicate ratings.
   for(var i=0;i<ratings.length;i++){
@@ -77,31 +77,20 @@ function checkRatings(_ratings){
         throw console.log('Error: Duplicate rating ID' + ratings[q].id + 'found.')
       }
     }
-    //Ensure all offensive linked skills exist.
-    for(var t=0;t<ratings[i].offLinkedSkills.length;t++){
+    //Ensure all linked skills exsist.
+    for(var t=0;t<ratings[i].linkedSkills.length;t++){
       var skillIsValid = false;
       for(var s=0;s<skills.length;s++){
-        if(ratings[i].offLinkedSkills[t]===skills[s].id){
+        if(Object.keys(ratings[i].linkedSkills[t])[0]===skills[s].id){
           skillIsValid = true;
         }
       }
       if(!skillIsValid)
-        throw console.log('Error: Offensive Linked Skill for '+ratings[i].id+' Invalid.')
-    }
-    //Ensure all defensive linked skills exist.
-    for(var t=0;t<ratings[i].defLinkedSkills.length;t++){
-      var skillIsValid = false;
-      for(var s=0;s<skills.length;s++){
-        if(ratings[i].defLinkedSkills[t]===skills[s].id){
-          skillIsValid = true;
-        }
-      }
-      if(!skillIsValid)
-        throw console.log('Error: Defensive Linked Skill for '+ratings[i].id+' Invalid.')
+        throw console.log('Error: Linked Skill for '+ratings[i].id+' Invalid.')
     }
   }
 }
-function checkChallenges(_challenges){
+function checkChallenges(_challenges,ratings,items){
   var challenges = _challenges;
   //Ensure no duplicate challenges.
   for(var i=0;i<challenges.length;i++){
@@ -115,37 +104,36 @@ function checkChallenges(_challenges){
     for(var t=0;t<challenges[i].offRatings.length;t++){
       var ratingIsValid = false;
       for(var s=0;s<ratings.length;s++){
-          if(Object.keys(challenges[i].offRatings)[t]===ratings[s].id){
+          if(Object.keys(challenges[i].offRatings[t])[0]===ratings[s].id){
             ratingIsValid = true;
           }
         }
         if(!ratingIsValid){
-            throw console.log('Error: Challenge rating invalid.')
+            throw console.log('Error: Challenge rating'+Object.keys(challenges[i].offRatings)[t]+' invalid.')
         }
       }
-      //Ensure challenges have valid rewards.
+      //Ensure challenges have valid Defensive ratings.
       for(var t=0;t<challenges[i].defRatings.length;t++){
         var ratingIsValid = false;
         for(var s=0;s<ratings.length;s++){
-            if(Object.keys(challenges[i].defRatings)[t]===ratings[s].id){
+            if(Object.keys(challenges[i].defRatings[t])[0]===ratings[s].id){
               ratingIsValid = true;
             }
           }
           if(!ratingIsValid){
-              throw console.log('Error: Challenge rating invalid.')
+              throw console.log('Error: Challenge rating'+Object.keys(challenges[i].defRatings[t])[0]+' invalid.')
           }
         }
-
-        //Ensure challenges have valid Defensive ratings.
+        //Ensure challenges have valid rewards.
         for(var t=0;t<challenges[i].rewards.length;t++){
-          var rewardIsValid = false;
+          var itemIsValid = false;
           for(var s=0;s<items.length;s++){
-              if(Object.keys(challenges[i].rewards)[t] === "nothing" || Object.keys(challenges[i].rewards)[t]===items[s].id){
+              if(Object.keys(challenges[i].rewards[t])[0] === "nothing" || Object.keys(challenges[i].rewards[t])[0]===items[s].id){
                 itemIsValid = true;
               }
             }
             if(!itemIsValid){
-                throw console.log('Error: item rewaqrd is invalid.')
+                throw console.log('Error: item reward ' + Object.keys(challenges[i].rewards[t])[0] + ' is invalid.')
             }
           }
 
