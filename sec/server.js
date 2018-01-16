@@ -260,7 +260,7 @@ console.log('Auth listening on ' + port);
 //****************************************
 
 //Every minute, give each logged in user 1 HP.
-setInterval(restoreEveryUsersHealth(1,User),60000);
+var healEveryPlayerEveryMin = setInterval(giveHealthToAllLoggedInPlayers,60000);
 
 
 //****************************************
@@ -502,7 +502,7 @@ function manifestPlayerCharacter(_user,_socket){
     });
   };
   //Give the user HP, dependant on the time they have been logged out.
-
+  giveHealthGainedWhileLoggedOut(user);
   //Have the user join the channel for the room they're standing in.
   io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' manifests into the ' + getUserRoomRef(user.local.characterLocationID).displayName);
   socket.join('room/'+user.local.characterLocationID);
@@ -660,8 +660,17 @@ function damagePlayer(user,damageVal){
 
 //healPlayer()
 //Takes a user and an int and adds health to that player, up to their max health.
-function healPlayer(){
-
+function healPlayer(user,healVal){
+  if((user.health+healVal)>=user.maxHealth){
+    user.health=user.maxHealth;
+  }else{
+    user.health = user.health+healVal;
+  }
+  user.save(function(err) {
+      if (err)
+          console.log(err);
+      return null;
+  });
 }
 
 //setAdventuringTag()
@@ -692,7 +701,10 @@ function addXP(user,skillID,val){
 //giveHealthToAllLoggedInPlayers()
 
 function giveHealthToAllLoggedInPlayers(){
-
+  console.log("User List:")
+  for(var i=0;i<io.sockets.connected.length;i++){
+    console.log(io.sockets.connected[i].userInfo);
+  }
 }
 
 //giveHealthGainedWhileLoggedOut()
@@ -700,6 +712,15 @@ function giveHealthToAllLoggedInPlayers(){
 //Called when a user logs in.
 function giveHealthGainedWhileLoggedOut(userInQuestion){
   var currTime = new Date().getTime();
+  if(typeof userInQuestion.timeLastLoggedOut==="undefined"){
+    userInQuestion.timeLastLoggedOut = currTime;
+    user.save(function(err) {
+        if (err)
+            throw err;
+        return null;
+    });
+    return;
+  }
   var timeOfLastLogout = userInQuestion.timeLastLoggedOut.getTime();
   var healthToGive = Math.floor((currTime-timeOfLastLogout)/1000);
   healPlayer(userInQuestion,healthToGive);
