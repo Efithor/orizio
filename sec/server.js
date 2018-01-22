@@ -120,7 +120,7 @@ io.use(function(socket, next){
         //If the user does not have a created character, the first chat message they enter is their name.
         if(!user.local.characterCreated){
           changeCharName(user,msg,socket);
-          setupCharacterSkills(user);
+          setupCharacterSkills(user,skills);
           manifestPlayerCharacter(user,socket);
           user.local.characterCreated = true;
           return;
@@ -532,14 +532,23 @@ function setupStats(user){
 
 //setupCharacterSkills()
 //Given a user, if they're missing any skills, set those to 1.
-function setupCharacterSkills(_user){
+function setupCharacterSkills(_user,skillsFile){
   var user = _user;
-  var skillArray = Object.keys(skills.id);
+  var skillArray = getSkillMap(skillsFile);
+  //If the user has no skill array, create one.
+  if(typeof user.local.characterSkills === "undefined"){
+    user.local.characterSkills = [];
+  }
   //If there are any skills in skills.json that are not in the user profile, add them.
-  for(var i=0;i<skills.length;i++){
+  console.log(skillArray.length);
+  for(var i=0;i<skillArray.length;i++){
     if(getSkillXPFromUser(user, skillArray[i])===-1){
-      var skillToPush = skillArray[i];
-      user.local.characterSkills.push({skillToPush:1}); //Set that skill to 1.
+      var skillObjectToPush = {};
+      skillObjectToPush[skillArray[i]] = 0;
+      console.log(skillObjectToPush);
+      user.local.characterSkills.push(skillObjectToPush); //Set that skill's XP to 0.
+      console.log(characterSkills);
+      console.log("---------------------------");
     }
   }
   //If there are any orphaned skills, remove those.
@@ -563,13 +572,14 @@ function setupCharacterSkills(_user){
 }
 
 //getSkillXPFromUser()
-//Given a user and a skill id, return the XP total of the skill. -1 if no skill.
-function getSkillXPFromUser(_user,_skillId){
-  var user = _user;
-  var skillId = _skillId;
+//Given a user and a skill id, return the XP total of the skill. -1 if no skill or if user.local.characterSkills is undefined.
+function getSkillXPFromUser(user,skillId){
+  if(typeof user.local.characterSkills === "undefined"){
+    return -1;
+  }
   var playerSkillArray = Object.keys(user.local.characterSkills);
   for(var i=0;i<playerSkillArray.length;i++){
-    if(playerSkillArray[i]===skillID){
+    if(playerSkillArray[i]===skillId){
       return user.local.characterSkills[i];
     }
   }
@@ -579,7 +589,7 @@ function getSkillXPFromUser(_user,_skillId){
 //getSkillLevel()
 //Given an XP value, return the level associated with it.
 function getSkillLevel(val){
-  return Math.floor(Math.sqrt(val/10));
+  return Math.floor(Math.sqrt(val/10))+1;
 }
 
 //tabulateRatings()
@@ -1090,4 +1100,14 @@ function getLoggedInUserMap(userModel){
 
   console.log(loggInUserMap);
   return loggInUserMap;
+}
+
+//Get skill map
+//Given the skillFile, return an array containing all the skill ids.
+function getSkillMap(skillFile){
+  var skillMap = [];
+  for(var i=0;i<skillFile.length;i++){
+    skillMap.push(skillFile[i].id);
+  }
+  return skillMap;
 }
