@@ -51,44 +51,39 @@
         //Load images
         var map = new paper.Raster("http://localhost:8080/mapA.png");
         map.position = paper.view.center;
+        map.scale(2);
+
+        //Adacross Icon
+        var adacrossIcon = new paper.Raster("http://localhost:8080/adacross1.png");
+        adacrossIcon.scale(2);
+        adacrossIcon.position = new paper.Point(296,230);
+        var trainingGroundIcon = new paper.Raster("http://localhost:8080/Training1.png");
+        trainingGroundIcon.scale(2);
+        trainingGroundIcon.position = new paper.Point(140,230);
+        var graniteSpireIcon = new paper.Raster("http://localhost:8080/GSpire1.png");
+        graniteSpireIcon.scale(2);
+        graniteSpireIcon.position = new paper.Point(530,70);
+        //Room Selector
         var roomSelectorIcon = document.createElement("IMG");
         roomSelectorIcon.setAttribute("src", "http://localhost:8080/roomSelector.png");
         var roomSelector = new paper.Raster(roomSelectorIcon, new paper.Point(-5000,-5000));
+        roomSelector.scale(1.7);
+        //Player Pawn
         var playerPawn = new paper.Path.RegularPolygon(new paper.Point(-5000, -5000), 3, 25);
         playerPawn.fillColor = 'blue';
-        //Button for the front walk.
-        var frontWalkButton = new paper.Rectangle(new paper.Point(291, 250), 80);
-        var fWBPath = new paper.Path.Rectangle(frontWalkButton);
-        //Button for the foyer.
-        var foyerButton = new paper.Rectangle(new paper.Point(291, 168), 80);
-        var fPath = new paper.Path.Rectangle(foyerButton);
-        //Button for the Sitting Room.
-        var sittingRoomButton = new paper.Rectangle(new paper.Point(373, 168), 80);
-        var sRBPath = new paper.Path.Rectangle(sittingRoomButton);
-        //Button for the front walk.
-        var diningRoomButton = new paper.Rectangle(new paper.Point(212, 168), 80);
-        var dRPath = new paper.Path.Rectangle(diningRoomButton);
-        //Button for the front walk.
-        var kitchenButton = new paper.Rectangle(new paper.Point(212, 85), 80);
-        var kPath = new paper.Path.Rectangle(kitchenButton);
 
+        //ONLOAD
         window.onload = function(){
           //Handle canvas clicks.
           paperTool.onMouseDown = function(event){
-            if(fWBPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='frontWalk';})!=-1){
-              moveCharacter('frontWalk');
+            if(adacrossIcon.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='adacross';})!=-1){
+              moveCharacter('adacross');
             }
-            if(fPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='foyer';})!=-1){
-              moveCharacter('foyer');
+            if(trainingGroundIcon.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='trainingField';})!=-1){
+              moveCharacter('trainingField');
             }
-            if(sRBPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='sittingRoom';})!=-1){
-              moveCharacter('sittingRoom');
-            }
-            if(dRPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='diningRoom';})!=-1){
-              moveCharacter('diningRoom');
-            }
-            if(kPath.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='kitchen';})!=-1){
-              moveCharacter('kitchen');
+            if(graniteSpireIcon.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='graniteSpire';})!=-1){
+              moveCharacter('graniteSpire');
             }
           }
           //Handle mouse hovers
@@ -99,32 +94,24 @@
           }
           paper.view.onFrame = function(event){
             //Move the room selector
+
             var roomSelected = false;
-            if(fWBPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='frontWalk';})!=-1){
-              roomSelector.position = new paper.Point(331, 290);
+            if(adacrossIcon.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='adacross';})!=-1){
+              roomSelector.position = new paper.Point(296,230);
               roomSelected = true;
             }
-            if(fPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='foyer';})!=-1){
-              roomSelector.position = new paper.Point(331, 208);
+            if(trainingGroundIcon.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='trainingField';})!=-1){
+              roomSelector.position = new paper.Point(140,230);
               roomSelected = true;
             }
-            if(sRBPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='sittingRoom';})!=-1){
-              roomSelector.position = new paper.Point(413, 208);
-              roomSelected = true;
-            }
-            if(dRPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='diningRoom';})!=-1){
-              roomSelector.position = new paper.Point(252, 208);
-              roomSelected = true;
-            }
-            if(kPath.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='kitchen';})!=-1){
-              roomSelector.position = new paper.Point(252, 125);
+            if(graniteSpireIcon.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='graniteSpire';})!=-1){
+              roomSelector.position = new paper.Point(530,70);
               roomSelected = true;
             }
             if(!roomSelected){
               roomSelector.position = new paper.Point(-5000, -5000);
             }
             //Ensure the player token is in the right place.
-
             paper.view.update();
           }
 
@@ -170,20 +157,14 @@
             element.scrollTop = element.scrollHeight;
         }
         function updatePlayerToken(){
-          if(playerTokenPos==='frontWalk'){
-            playerPawn.position = new paper.Point(331, 290);
+          if(playerTokenPos==='adacross'){
+            playerPawn.position = new paper.Point(296,230);
           }
-          if(playerTokenPos==='foyer'){
-            playerPawn.position = new paper.Point(331, 208);
+          if(playerTokenPos==='graniteSpire'){
+            playerPawn.position = new paper.Point(140,230);
           }
-          if(playerTokenPos==='sittingRoom'){
-            playerPawn.position = new paper.Point(413, 208);
-          }
-          if(playerTokenPos==='diningRoom'){
-            playerPawn.position = new paper.Point(252, 208);
-          }
-          if(playerTokenPos==='kitchen'){
-            playerPawn.position = new paper.Point(252, 125);
+          if(playerTokenPos==='trainingField'){
+            playerPawn.position = new paper.Point(530,70);
           }
         }
         function updatePlayerList(_playerList){

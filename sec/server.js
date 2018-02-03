@@ -131,48 +131,7 @@ io.use(function(socket, next){
       //VERB: MOVE
       // Move the character
       socket.on('char move', function(destinationID){
-        // Check if move is valid.
-        // If the player is adventuring, they can't move.
-        if(user.local.isAdventuring){
-          return console.log(user.local.characterName + " is unable to move: adventuring.");
-        }
-        // Find the room the user is in.
-        var currRoom = getUserRoomRef(user.local.characterLocationID);
-        //Ensure that said room has that exit.
-        var exitIsValid = false;
-        for(var i=0;i<currRoom.exits.length;i++){
-          if(currRoom.exits[i]===destinationID){
-            exitIsValid = true;
-            break;
-          }
-        }
-        if(!exitIsValid){
-          return console.log('Exit ' + destinationID + ' is invalid.');
-        }
-        // If so, update the character's position in the database and send them a message.
-        user.local.characterLocationID = destinationID;
-        user.save(function(err) {
-            if (err)
-                throw err;
-            return null;
-        });
-        socket.leave('room/'+currRoom.id);
-        emitUsersInRoomList(currRoom.id);
-        io.to('room/'+currRoom.id).emit('chat message',user.local.characterName + ' exits the ' + currRoom.displayName);
-        currRoom = getUserRoomRef(user.local.characterLocationID);
-        if(currRoom.type==="plaza"){
-          io.to('room/'+user.local.characterLocationID).emit('chat message',user.local.characterName + ' walks into the ' + currRoom.displayName);
-          socket.join('room/'+user.local.characterLocationID);
-          emitUsersInRoomList(user.local.characterLocationID);
-          console.log(user.local.email + ' has moved to ' + destinationID);
-          io.to('priv/' + user.id).emit('data: validExits', currRoom.exits);
-          io.to('priv/' + user.id).emit('data: currRoom', currRoom.id);
-          io.to('priv/' + user.id).emit('chat message', 'You move to the ' + currRoom.displayName);
-          io.to('priv/' + user.id).emit('chat message', currRoom.description);
-        }
-        if(currRoom.type==="dungeon"){
-          adventure(user, currRoom.id);
-        }
+        travel(user,destinationID);
       })
       //VERB: DISCONNECT
       socket.on('disconnect', function(){
@@ -540,23 +499,19 @@ function setupCharacterSkills(_user,skillsFile){
     user.local.characterSkills = [];
   }
   //If there are any skills in skills.json that are not in the user profile, add them.
-  console.log(skillArray.length);
   for(var i=0;i<skillArray.length;i++){
     if(getSkillXPFromUser(user, skillArray[i])===-1){
       var skillObjectToPush = {};
       skillObjectToPush[skillArray[i]] = 0;
-      console.log(skillObjectToPush);
       user.local.characterSkills.push(skillObjectToPush); //Set that skill's XP to 0.
-      console.log(characterSkills);
-      console.log("---------------------------");
     }
   }
   //If there are any orphaned skills, remove those.
-  var playerSkillArray = Object.keys(user.local.characterSkills);
+  var playerSkillArray = user.local.characterSkills;
   for(var i=0;i<playerSkillArray.length;i++){
     var skillFound = false;
     for(var q=0;q<skillArray.length;q++){
-      if(playerSkillArray[i]===skillArray[q]){
+      if(Object.keys(playerSkillArray[i])[0]===skillArray[q]){
         skillFound = true;
       }
     }
@@ -739,7 +694,7 @@ function giveHealthGainedWhileLoggedOut(userInQuestion){
 //travel()
 //Takes a user and a location.
 //Has the user travel to the new location.
-function travel(user,destination){
+function travel(user,destinationID){
   // Check if move is valid.
   // If the player is adventuring, they can't move.
   if(user.local.isAdventuring){
@@ -779,8 +734,9 @@ function travel(user,destination){
     io.to('priv/' + user.id).emit('chat message', 'You move to the ' + currRoom.displayName);
     io.to('priv/' + user.id).emit('chat message', currRoom.description);
   }
+  console.log(currRoom);
   if(currRoom.type==="dungeon"){
-    adventure(user, currRoom.id);
+    adventure(user, currRoom);
   }
 
 }
@@ -810,7 +766,7 @@ function adventure(userArray, loc){
   //Have players travel() to the adventure location.
   //Once they arrive:
   for(var i=0;i<loc.challengeStages;i++){
-    challenge(userArray,selectChallenge(loc,currChallengeStage));
+    challenge(userArray,selectChallenge(loc,currStage));
     //Adventure Failure state
     if(currStage <= -1 || livePlayerArray.length === 0){
       adventureRetreat(userArray);
@@ -826,13 +782,13 @@ function adventure(userArray, loc){
 function adventureRetreat(userArray){
   rewardPlayers(userArray,"retreat");
   setAdventuringTag(userArray, false);
-  console.log("The group lead by " + userArray[i] + " was forced to retreat.");
+  console.log("The group lead by " + userArray[0] + " was forced to retreat.");
 }
 
 function adventureVictory(userArray){
   rewardPlayers(userArray,"victory");
   setAdventuringTag(userArray, false);
-  console.log("The group lead by " + userArray[i] + " survived.");
+  console.log("The group lead by " + userArray[0] + " survived.");
 }
 
 //rewardPlayers(userArray,rewardType)
@@ -871,7 +827,7 @@ function rewardPlayers(userArray,rewardType){
 
 //selectChallenge(loc,currChallengeStage)
 //Given a location and a challenge stage, select a valid challenge.
-function selectChallenge(loc,curChallengeStage){
+function selectChallenge(loc,currChallengeStage){
   if(loc.type!="dungeon"){
     return console.log("Error: " + loc.id + " is not a dungeon.");
   }
@@ -885,7 +841,7 @@ function selectChallenge(loc,curChallengeStage){
 //The users attack() the challenge and defend() against it until the users run out of
 //health or morale, OR the challenge runs out of health.
 function challenge(userArray,challengeID){
-    var challengeHealth = getChallenge(challengeID).health;
+    var challengeHealth = getChallenge(challengeID).health; //TODO: FIX
     var partyMorale = 100;
     var combat = setInterval(combatRound(userArray,challengeID),1000);
 }

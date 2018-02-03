@@ -21,7 +21,7 @@
   {
     "id"          : "graniteSpire",
 	  "displayName" : "Granite Spire",
-	  "description" : "A natural tower of granite, honycombed with unnatural tunnels.",
+	  "description" : "A natural tower of granite, honeycombed with unnatural tunnels.",
     "type"        : "dungeon",
     "challengeStages" : 4,
     "CRMod" : 1,
