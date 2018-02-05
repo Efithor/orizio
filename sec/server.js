@@ -121,6 +121,8 @@ io.use(function(socket, next){
         if(!user.local.characterCreated){
           changeCharName(user,msg,socket);
           setupCharacterSkills(user,skills);
+          user.local.characterInventory = [];
+          giveStartingEquipment(user);
           manifestPlayerCharacter(user,socket);
           user.local.characterCreated = true;
           return;
@@ -144,11 +146,11 @@ io.use(function(socket, next){
 
       //VERB: GET INVENTORY
       socket.on('getInventory', function(){
-        io.to('priv/' + user.id).emit('data: inventory', user.local.inventory);
+        io.to('priv/' + user.id).emit('data: inventory', user.local.characterInventory);
       })
 
       //VERB: GET HEALTH
-      socket.on('getInventory', function(){
+      socket.on('getHealth', function(){
         io.to('priv/' + user.id).emit('data: health', user.local.health);
       })
 
@@ -235,7 +237,21 @@ var healEveryPlayerEveryMin = setInterval(giveHealthToAllLoggedInPlayers,60000);
 function addItem(_user,_itemID){
   var user = _user;
   var itemID = _itemID;
-  var item;
+  var item = {};
+  item.typeID = null;
+  item.itemGUID = null;
+  //Ensure itemID is legit
+  for(var i=0;i<items.length;i++){
+    var doesExist = false;
+    if(items[i].id===itemID){
+      doesExist = true;
+      break;
+    }
+  }
+  if(!doesExist){
+    console.log("Error: item " + itemID + " does not exist.");
+    return;
+  }
 
   item.itemGUID = createGUID();
   item.typeID = itemID;
@@ -375,6 +391,13 @@ function moveItemFromEquipmentToInventory(user, itemToMoveGUID){
   }
 }
 
+//giveStartingEquipment(user)
+function giveStartingEquipment(user){
+  //Give the user a sword.
+  addItem(user,"bronzeSword");
+  //Give the user some chain armor.
+  addItem(user,"bronzeChainArmor");
+}
 
 //*********LOCATION FUNCTIONS*************
 //getUserRoomRef()

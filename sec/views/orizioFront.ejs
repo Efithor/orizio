@@ -12,20 +12,20 @@
         form input { border: 0; padding 10px; width: 90%; margin-right: .5%; }
         form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
         #messages { list-style-type: none; margin: 0; padding: 0; border-style:solid;
-          width:535px;overflow-y:scroll; position:absolute; top:410px; bottom:50px;
+          width:535px;overflow-y:scroll; position:absolute; top:490px; bottom:50px;
           left: 105px;}
         #messages li { padding: 5px 10px; }
         #messages li:nth-child(odd) { background: #eee; }
         #map {}
         #orizioWrapper{width:640px; margin:auto; position: relative; height: 100vh;}
         #userList{list-style-type: none; margin: 0; padding: 0; border-style:solid;
-          width:100px;overflow-y:scroll; position:absolute; top:410px; bottom:50px;}
+          width:100px;overflow-y:scroll; position:absolute; top:490px; bottom:50px;}
       </style>
     </head>
     <body>
       <div id="orizioWrapper">
       <div id="map">
-        <canvas id="mapCanvas" width="640" height="400">
+        <canvas id="mapCanvas" width="640" height="490">
       </div>
       <ul id="messages"></ul>
       <ul id="userList"></ul>
@@ -40,20 +40,28 @@
       <script type="text/javascript" src="http://localhost:8080/paper/paper-full.js"></script>
       <script>
         //Clientside data
-        //Array of valid exits - prevent the user from clicking exits that don't work.
-        var validExits = [];
+        var validExits = []; //Array of valid exits - prevent the user from clicking exits that don't work.
         var playerTokenPos;
+        var inventoryArray = [];
+        var invObjects = []; //Array of rasters.
+        //Setup some variables:
+        var mapPaneIsOpen = true;
+        var invPaneIsOpen = false;
+        var skillPaneIsOpen = false;
+        var objectBeingGrabbed = null;
         //Load the graphics
         var c = document.getElementById("mapCanvas");
         paper.setup(c);
+
         //Load in paper tools
         var paperTool = new paper.Tool();
+
         //Load images
         var map = new paper.Raster("http://localhost:8080/mapA.png");
-        map.position = paper.view.center;
+        map.position = new paper.Point(320,200);
         map.scale(2);
 
-        //Adacross Icon
+        //Map Icons
         var adacrossIcon = new paper.Raster("http://localhost:8080/adacross1.png");
         adacrossIcon.scale(2);
         adacrossIcon.position = new paper.Point(296,230);
@@ -63,19 +71,60 @@
         var graniteSpireIcon = new paper.Raster("http://localhost:8080/GSpire1.png");
         graniteSpireIcon.scale(2);
         graniteSpireIcon.position = new paper.Point(530,70);
+        //Player Pawn
+        var playerPawn = new paper.Path.RegularPolygon(new paper.Point(-5000, -5000), 3, 25);
+        playerPawn.fillColor = 'blue';
+        var mapGroup = new paper.Group([map,adacrossIcon,trainingGroundIcon,graniteSpireIcon,playerPawn]);
+
         //Room Selector
         var roomSelectorIcon = document.createElement("IMG");
         roomSelectorIcon.setAttribute("src", "http://localhost:8080/roomSelector.png");
         var roomSelector = new paper.Raster(roomSelectorIcon, new paper.Point(-5000,-5000));
         roomSelector.scale(1.7);
-        //Player Pawn
-        var playerPawn = new paper.Path.RegularPolygon(new paper.Point(-5000, -5000), 3, 25);
-        playerPawn.fillColor = 'blue';
+
+        //Load Menu Panes
+        //Inv Pane
+        var inventoryPane = new paper.Path.Rectangle(new paper.Point(0,0), new paper.Point(640,500));
+        inventoryPane.fillColor = "brown";
+        var weaponSquare = new paper.Path.Rectangle(new paper.Point(100,100),100);
+        weaponSquare.strokeColor = "black";
+        var weaponText = new paper.PointText();
+        weaponText.position = new paper.Point(80,100);
+        weaponText.content = "WEAPON";
+        weaponText.fillColor = "black";
+        var armorSquare = new paper.Path.Rectangle(new paper.Point(100,300),100);
+        armorSquare.strokeColor = "black";
+        var armorText = new paper.PointText(new paper.Point(80,280));
+        armorText.content = "ARMOR";
+        armorText.fillColor = "black";
+        var inventoryPaneGroup = new paper.Group([inventoryPane,weaponSquare,armorSquare,weaponText,armorText]);
+        inventoryPaneGroup.position = new paper.Point(-5000,-5000);
+
+        //Load Buttons
+        var mapButton = new paper.Raster("http://localhost:8080/mapButton.png");
+        mapButton.scale(1.5);
+        mapButton.position = new paper.Point(50,470);
+        var skillButton = new paper.Raster("http://localhost:8080/SkillButton.png");
+        skillButton.scale(1.5);
+        skillButton.position = new paper.Point(135,470);
+        var invButton = new paper.Raster("http://localhost:8080/INVButton.png");
+        invButton.scale(1.5);
+        invButton.position = new paper.Point(220,470);
+
 
         //ONLOAD
         window.onload = function(){
+
           //Handle canvas clicks.
           paperTool.onMouseDown = function(event){
+            //Object Click and Drag
+            if(objectBeingGrabbed!=null){
+              //If the held object is a weapon, and is being held over the weapon slot, have it slot in and send an equip to the server.
+              //As above, but for armor.
+              mouseRelease(objectBeingGrabbed);
+              return;
+            }
+            //Map Icons
             if(adacrossIcon.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='adacross';})!=-1){
               moveCharacter('adacross');
             }
@@ -84,6 +133,41 @@
             }
             if(graniteSpireIcon.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='graniteSpire';})!=-1){
               moveCharacter('graniteSpire');
+            }
+
+            //Menu Buttons
+            //Inventory
+            if(invButton.contains(event.point)){
+              if(!invPaneIsOpen){
+                invPaneIsOpen = true;
+                getInventoryFromServer(); //Request Inventory from server
+                //Move current pane out of the way.
+                if(mapPaneIsOpen){
+                  mapPaneIsOpen = false;
+                  //mapGroup.position = new paper.Point(0,0);
+                  mapGroup.position = new paper.Point(-5000,-5000);
+                }
+                if(skillPaneIsOpen){
+                  //Move skill pane.
+                }
+                inventoryPaneGroup.position = new paper.Point(320,200); //Move inventory into position.
+              }else{
+                invPaneIsOpen = false;
+                inventoryPaneGroup.position = new paper.Point(-5000,-5000); //Move inventory off screen.
+                depopulateInventory();
+                //mapGroup.position = paper.view.center; //Move the map pane into position.
+                mapGroup.position = new paper.Point(320,200);
+                mapPaneIsOpen = true;
+              }
+            }
+            //Inventory items
+            if(invPaneIsOpen){
+              for(var i=0;i<invObjects.length;i++){
+                if(invObjects[i].contains(event.point)){
+                  mouseGrab(invObjects[i]);
+                  break;
+                }
+              }
             }
           }
           //Handle mouse hovers
@@ -94,7 +178,6 @@
           }
           paper.view.onFrame = function(event){
             //Move the room selector
-
             var roomSelected = false;
             if(adacrossIcon.contains(mousePos) && validExits.findIndex(function isExit(exit){return exit==='adacross';})!=-1){
               roomSelector.position = new paper.Point(296,230);
@@ -111,7 +194,13 @@
             if(!roomSelected){
               roomSelector.position = new paper.Point(-5000, -5000);
             }
-            //Ensure the player token is in the right place.
+
+
+            //If the mouse has grabbed something, ensure it moves along with the mouse.
+            if(objectBeingGrabbed != null){
+              objectBeingGrabbed.position = mousePos;
+            }
+
             paper.view.update();
           }
 
@@ -133,6 +222,10 @@
           function moveCharacter(dest){
             socket.emit('char move', dest);
           };
+          //Get Inventory function
+          function getInventoryFromServer(){
+            socket.emit('getInventory');
+          };
           //Receive Chat
           socket.on('chat message', function(msg){
             $('#messages').append($('<li>').text(msg));
@@ -149,6 +242,12 @@
           });
           socket.on('data: playerList', function(data){
             updatePlayerList(data);
+          });
+          //Inventory data for the purposes of displaying inv.
+          socket.on('data: inventory', function(data){
+            inventoryArray = data;
+            //If the inventory pane is active, populate inv.
+            populateInventory();
           });
         }
         //Function to handle the scrollbar
@@ -173,6 +272,63 @@
           for(var i=0;i<playerList.length;i++){
             $('#userList').append($('<li>').text(playerList[i]));
           }
+        }
+
+        //If the inv pane is open, populate it. Must only be called after getting data.
+        function populateInventory(){
+          for(var i=0;i<inventoryArray.length;i++){
+            invObjects[i] = new paper.Raster(getItemIcon(inventoryArray[i].typeID));
+            invObjects[i].position = new paper.Point(paper.view.center.x+i*105,paper.view.center.y);
+            invObjects[i].scale(2);
+          }
+        }
+        //Clear the invObjects Array and remove the rasters.
+        function depopulateInventory(){
+          for(var i=0;i<invObjects.length;i++){
+            invObjects[i].remove();
+          }
+          invObjects = [];
+        }
+        //If there is a cleaner way to do this, do let me know.
+        function getItemIcon(itemID){
+          switch(itemID) {
+            case "bronzeSword":
+              return "http://localhost:8080/BronzeSword.png";
+              break;
+            case "ironSword":
+              return "http://localhost:8080/IronSword.png";
+              break;
+            case "steelSword":
+              return "http://localhost:8080/SteelSword.png";
+              break;
+            case "wrathiteSword":
+              return "http://localhost:8080/WrathiteSword.png";
+              break;
+            case "bronzeSpear":
+              return "http://localhost:8080/BronzeSpear.png";
+              break;
+            case "ironSpear":
+              return "http://localhost:8080/IronSpear.png";
+              break;
+            case "steelSpear":
+              return "http://localhost:8080/SteelSpear.png";
+              break;
+            case "wrathiteSpear":
+              return "http://localhost:8080/WrathiteSpear.png";
+              break;
+            default:
+              return "http://localhost:8080/unknownItem.png";
+          }
+        }
+
+        //If called, grab an object.
+        function mouseGrab(object){
+          objectBeingGrabbed = object;
+          console.log("Grabbed " + objectBeingGrabbed);
+        }
+        //If called, release the grabbed object, if any.
+        function mouseRelease(object){
+          objectBeingGrabbed = null;
         }
       </script>
     </body>
