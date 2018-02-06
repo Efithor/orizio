@@ -245,6 +245,7 @@ function addItem(_user,_itemID){
     var doesExist = false;
     if(items[i].id===itemID){
       doesExist = true;
+      item = items[i];
       break;
     }
   }
@@ -254,7 +255,6 @@ function addItem(_user,_itemID){
   }
 
   item.itemGUID = createGUID();
-  item.typeID = itemID;
 
   user.local.characterInventory.push(item);
 }
