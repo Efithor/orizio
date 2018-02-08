@@ -43,10 +43,12 @@
         var validExits = []; //Array of valid exits - prevent the user from clicking exits that don't work.
         var playerTokenPos;
         var inventoryArray = [];
-        var invObjects = []; //Array of rasters.
+        var invSquares = []; //Array of inventory squares. Inventory raster objects are stored at invSquares[i].containedItem
         //Setup some variables:
         var mapPaneIsOpen = true;
         var invPaneIsOpen = false;
+        var itemStatBox;
+        var itemStatBoxOpen = false;
         var skillPaneIsOpen = false;
         var objectBeingGrabbed = null;
         //Load the graphics
@@ -92,20 +94,23 @@
         weaponText.position = new paper.Point(80,100);
         weaponText.content = "WEAPON";
         weaponText.fillColor = "black";
+        weaponSquare.equippedItem = null; //Set the weapon square's equippedItem to null
         var armorSquare = new paper.Path.Rectangle(new paper.Point(50,300),100);
         armorSquare.strokeColor = "black";
         var armorText = new paper.PointText(new paper.Point(80,280));
         armorText.content = "ARMOR";
         armorText.fillColor = "black";
+        armorSquare.equippedItem = null; //Set the armor square's equippedItem to null
         var inventoryPaneGroup = new paper.Group([inventoryPane,weaponSquare,armorSquare,weaponText,armorText]);
         //Generate Empty Inv Squares
-        var invSquares = [];
         var invSquareCount = 0;
         for(var i=0;i<3;i++){
-          for(var q=0;q<3;q++){
-            invSquares[invSquareCount] = new paper.Path.Rectangle(new paper.Point(150 + q*105,50 + i*105),100);
+          for(var q=0;q<4;q++){
+            invSquares[invSquareCount] = new paper.Path.Rectangle(new paper.Point(200 + q*105,150 + i*105),100);
             invSquares[invSquareCount].strokeColor = "black";
+            invSquares[invSquareCount].item = null;
             inventoryPaneGroup.addChild(invSquares[invSquareCount]);
+            invSquareCount++;
           }
         }
         inventoryPaneGroup.position = new paper.Point(-5000,-5000);
@@ -130,25 +135,89 @@
             //Object Click and Drag
             if(objectBeingGrabbed!=null){
               //Inv Cases
-              //If the held object is a weapon, and is being held over the weapon slot, have it slot in and send an equip to the server.
-              if(arrayContains(objectBeingGrabbed.data.types,"weapon") && weaponSquare.contains(event.point)){
-                objectBeingGrabbed.position = weaponSquare.position;
-                mouseRelease(objectBeingGrabbed);
-                console.log("Equip the thing!");
+              //EQUIP
+              //If the held object is a weapon, isn't the weapon currently equipped, and is being held over the weapon slot, have it slot in and send an equip to the server.
+              //Should also unequip whatever is currently equipped.
+              if(objectBeingGrabbed != weaponSquare.equippedItem && arrayContains(objectBeingGrabbed.data.types,"weapon") && weaponSquare.contains(event.point)){
+                weaponSquare.equippedItem = objectBeingGrabbed; //Add object being grabbed to the weapon square's EI catagory.
+                //Remove the objectBeingGrabbed from inventory objects
+                for(var i=0;i<invSquares.length;i++){
+                  if(invSquares[i].containedItem != null && invSquares[i].containedItem === objectBeingGrabbed){
+                    invSquares[i].containedItem = null;
+                    break;
+                  }
+                }
+                mouseRelease(objectBeingGrabbed,weaponSquare.position);
+                console.log("Tell the server to Equip the thing!"); //If there's already an item there, the server will move that item to the first available inventory space.
                 return;
               }
               //As above, but for armor.
-              if(arrayContains(objectBeingGrabbed.data.types,"armor") && armorSquare.contains(event.point)){
-                objectBeingGrabbed.position = armorSquare.position;
-                mouseRelease(objectBeingGrabbed);
-                console.log("Equip the thing!");
+              if(objectBeingGrabbed != armorSquare.equippedItem && arrayContains(objectBeingGrabbed.data.types,"armor") && armorSquare.contains(event.point)){
+                armorSquare.equippedItem = objectBeingGrabbed; //Add object being grabbed to the weapon square's EI catagory.
+                //Remove the objectBeingGrabbed from inventory objects
+                for(var i=0;i<invSquares.length;i++){
+                  if(invSquares[i].containedItem != null && invSquares[i].containedItem === objectBeingGrabbed){
+                    invSquares[i].containedItem = null;
+                    break;
+                  }
+                }
+                mouseRelease(objectBeingGrabbed,armorSquare.position);
+                console.log("Tell the server to Equip the thing!"); //If there's already an item there, the server will move that item to the first available inventory space.
                 return;
               }
 
-              //Otherwise, just drop it.
-              mouseRelease(objectBeingGrabbed);
+              //MOVE ITEM/UNEQUIP ITEM
+              //If the grabbed item isn't equipped, drop it in and update the server.
+                for(var i=0;i<invSquares.length;i++){
+                if(invSquares[i].contains(event.point)){
+                  //If the square is empty, just drop it in. Otherwise, exchange the two items.
+                  var squareToMoveFrom = findItemSquare(objectBeingGrabbed); //See what square we're taking this from. May not exist in some cases.
+                  if(squareToMoveFrom != false){
+                    squareToMoveFrom.containedItem = null;
+                  }
+                  //If there's an object already in the space, put that object into a buffer real quick.
+                  var objectExchangeBuffer = null;
+                  if(invSquares[i].containedItem != null){
+                    objectExchangeBuffer = invSquares[i].containedItem;
+                  }
+                  invSquares[i].containedItem = objectBeingGrabbed;
+                  //If the item is equipped, unequip it.
+                  if(isEquipped(objectBeingGrabbed)){
+                    unequipItem(objectBeingGrabbed);
+                  }
+                  mouseRelease(objectBeingGrabbed,invSquares[i].position);
+                  //If the exchange buffer has an item in it, grab it.
+                  if(objectExchangeBuffer != null){
+                    mouseGrab(objectExchangeBuffer);
+                  }
+                  return;
+                }
+              }
+
+
+              //DROP AND RETURN
+              //Otherwise, just drop it. The inventory item should return to its previous spot.
+              //Find where the object is in the invSquares array.
+              //Once found, release it to that position.
+              for(var i=0;i<invSquares.length;i++){
+                if(invSquares[i] != null && invSquares[i].containedItem === objectBeingGrabbed){
+                  mouseRelease(objectBeingGrabbed,invSquares[i].position);
+                  return;
+                }
+              }
+              //Do the same for equipped items.
+              if(weaponSquare != null && weaponSquare.equippedItem === objectBeingGrabbed){
+                mouseRelease(objectBeingGrabbed,weaponSquare.position);
+                return;
+              }
+              if(armorSquare != null && armorSquare.equippedItem === objectBeingGrabbed){
+                mouseRelease(objectBeingGrabbed,armorSquare.position);
+                return;
+              }
+
               return;
             }
+
             //Map Icons
             if(adacrossIcon.contains(event.point) && validExits.findIndex(function isExit(exit){return exit==='adacross';})!=-1){
               moveCharacter('adacross');
@@ -187,14 +256,29 @@
             }
             //Inventory items
             if(invPaneIsOpen){
-              for(var i=0;i<invObjects.length;i++){
-                if(invObjects[i].contains(event.point)){
-                  mouseGrab(invObjects[i]);
+              //If inventory object is grabbed, grab it.
+              for(var i=0;i<invSquares.length;i++){
+                if(invSquares[i].containedItem != null && invSquares[i].containedItem.contains(event.point)){
+                  deleteItemStatBox();
+                  mouseGrab(invSquares[i].containedItem);
                   break;
                 }
               }
+              //If equipped weapon is clicked, grab it.
+              if(weaponSquare.equippedItem != null && weaponSquare.equippedItem.contains(event.point)){
+                deleteItemStatBox();
+                mouseGrab(weaponSquare.equippedItem);
+                return;
+              }
+              //If equipped armor is clicked, grab it.
+              if(armorSquare.equippedItem != null && armorSquare.equippedItem.contains(event.point)){
+                deleteItemStatBox();
+                mouseGrab(armorSquare.equippedItem);
+                return;
+              }
             }
           }
+
           //Handle mouse hovers
           var mousePos;
           //If the mouse moves, record the movement.
@@ -220,7 +304,29 @@
               roomSelector.position = new paper.Point(-5000, -5000);
             }
 
-
+            //If no item is being actively grabbed and the player is hovering over an item raster, draw a stat box for it.
+            if(objectBeingGrabbed === null && !itemStatBoxOpen){
+              if(weaponSquare.equippedItem != null && weaponSquare.contains(mousePos)){
+                drawItemStatBox(weaponSquare.equippedItem);
+              }
+              if(armorSquare.equippedItem != null && armorSquare.contains(mousePos)){
+                drawItemStatBox(armorSquare.equippedItem);
+              }
+              for(var i=0;i<invSquares.length;i++){
+                if(invSquares[i].containedItem != null && invSquares[i].contains(mousePos)){
+                  drawItemStatBox(invSquares[i].containedItem);
+                  break;
+                }
+              }
+            }
+            //If a stat box is open but the player has moved off that point, erase the box.
+            if(itemStatBoxOpen && !itemStatBox.currInfo.contains(mousePos)){
+              deleteItemStatBox();
+            }
+            //If a statbox is open, have it move the mouse.
+            if(itemStatBoxOpen){
+              itemStatBox.position = new paper.Point(mousePos.x-75,mousePos.y+60);
+            }
             //If the mouse has grabbed something, ensure it moves along with the mouse.
             if(objectBeingGrabbed != null){
               objectBeingGrabbed.position = mousePos;
@@ -302,20 +408,23 @@
         //If the inv pane is open, populate it. Must only be called after getting data.
         function populateInventory(){
           for(var i=0;i<inventoryArray.length;i++){
-            invObjects[i] = new paper.Raster(getItemIcon(inventoryArray[i].id));
-            invObjects[i].position = new paper.Point(paper.view.center.x+i*105,paper.view.center.y);
-            invObjects[i].scale(2);
+            invSquares[i].containedItem = new paper.Raster(getItemIcon(inventoryArray[i].id));
+            invSquares[i].containedItem.scale(2);
             //Pass item info to the raster.
-            invObjects[i].data = inventoryArray[i];
+            invSquares[i].containedItem.data = inventoryArray[i];
+            //Put the item into an appropriate slot.
+            invSquares[i].containedItem.position = invSquares[i].position;
           }
         }
-        //Clear the invObjects Array and remove the rasters.
+        //Clear the invSquare's containedItem Array and remove the rasters.
         function depopulateInventory(){
-          for(var i=0;i<invObjects.length;i++){
-            invObjects[i].remove();
+          for(var i=0;i<invSquares.length;i++){
+            if(invSquares[i].containedItem != null){
+              invSquares[i].containedItem.remove();
+            }
           }
-          invObjects = [];
         }
+
         //If there is a cleaner way to do this, do let me know.
         function getItemIcon(itemID){
           switch(itemID) {
@@ -343,6 +452,30 @@
             case "wrathiteSpear":
               return "http://localhost:8080/WrathiteSpear.png";
               break;
+            case "bronzeHammer":
+              return "http://localhost:8080/maceBronze.png";
+              break;
+            case "ironHammer":
+              return "http://localhost:8080/maceIron.png";
+              break;
+            case "steelHammer":
+              return "http://localhost:8080/maceSteel.png";
+              break;
+            case "wrathiteHammer":
+              return "http://localhost:8080/maceWrathite.png";
+              break;
+            case "bronzeChainArmor":
+              return "http://localhost:8080/chainmailBronze.png";
+              break;
+            case "ironChainArmor":
+              return "http://localhost:8080/chainmailIron.png";
+              break;
+            case "steelChainArmor":
+              return "http://localhost:8080/chainmailSteel.png";
+              break;
+            case "wrathiteChainArmor":
+              return "http://localhost:8080/chainmailWrathite.png";
+              break;
             default:
               return "http://localhost:8080/unknownItem.png";
           }
@@ -351,12 +484,17 @@
         //If called, grab an object.
         function mouseGrab(object){
           objectBeingGrabbed = object;
-          console.log("Grabbed " + objectBeingGrabbed);
+          objectBeingGrabbed.bringToFront();
         }
+
         //If called, release the grabbed object, if any.
-        function mouseRelease(object){
+        function mouseRelease(object,positionToReleaseTo){
+          if(typeof positionToReleaseTo != "undefined"){
+            objectBeingGrabbed.position = positionToReleaseTo;
+          }
           objectBeingGrabbed = null;
         }
+
         //Does the array (arg1) contain the element arg2?
         function arrayContains(array,element){
           for(var i=0;i<array.length;i++){
@@ -365,6 +503,85 @@
             }
           }
           return false;
+        }
+
+        //Check if an item raster is in any of the equipped slots.
+        function isEquipped(raster){
+          if(weaponSquare.equippedItem === raster || armorSquare.equippedItem === raster){
+            return true;
+          }
+          return false;
+        }
+
+        //Given an item, return what square it's in.
+        function findItemSquare(raster){
+          for(var i=0;i<invSquares.length;i++){
+            if(invSquares[i].containedItem===raster){
+              return invSquares[i];
+            }
+          }
+          return false;
+        }
+
+        //Given an item, unequip it.
+        function unequipItem(raster){
+          //Check if it's equipped.
+          if(!isEquipped(raster)){
+            console.log("Error: " + raster + " is not equipped.");
+            return;
+          }
+          //Search each slot for the raster.
+          if(weaponSquare.equippedItem === raster){
+            //Clear the weapon slot.
+            weaponSquare.equippedItem = null;
+            //Send a message to the server to unequip the weapon.
+            console.log("Tell the server to unequip " + raster);
+          }
+          if(armorSquare.equippedItem === raster){
+            //Clear the armor slot
+            armorSquare.equippedItem = null;
+            //Send a message to the server to unequip the armor.
+            console.log("Tell the server to unequip " + raster);
+          }
+        }
+
+        //Draw the itemStatBox
+        function drawItemStatBox(raster){
+          if(itemStatBoxOpen){
+            console.log("Error: There is already an item stat box.");
+            return;
+          }
+          if(raster===null){
+            console.log("Error: Unable to draw statbox for null raster.");
+            return;
+          }
+          //Draw a statbox.
+          var itemStatBoxFrame = new paper.Path.Rectangle(new paper.Point(0,0),new paper.Point(150,100));
+          itemStatBoxFrame.fillColor = "white";
+          itemStatBoxFrame.strokeColor = "black";
+          itemStatBox = new paper.Group(itemStatBoxFrame);
+          var itemName = new paper.PointText(new paper.Point(25,25));
+          itemName.fillColor = "black";
+          itemName.content = raster.data.displayName;
+          itemStatBox.addChild(itemName);
+          var itemClass = new paper.PointText(new paper.Point(25,50));
+          itemClass.fillColor = "black";
+          itemClass.content = "Class: " + raster.data.class;
+          itemStatBox.addChild(itemClass);
+          var itemPower = new paper.PointText(new paper.Point(25,75));
+          itemPower.fillColor = "black";
+          itemPower.content = "Power: " + raster.data.power;
+          itemStatBox.addChild(itemPower);
+
+          itemStatBox.currInfo = raster;
+          itemStatBoxOpen = true;
+        }
+
+        //Delete the itemStatBox.
+        function deleteItemStatBox(){
+          itemStatBox.remove();
+          itemStatBox = null;
+          itemStatBoxOpen = false;
         }
       </script>
     </body>
