@@ -170,7 +170,7 @@
               //If the grabbed item isn't equipped, drop it in and update the server.
                 for(var i=0;i<invSquares.length;i++){
                 if(invSquares[i].contains(event.point)){
-                  //If the square is empty, just drop it in. Otherwise, exchange the two items.
+                  //If the square is empty, just drop it in. Otherwise, exchange the two items. Don't update the server until the other one has been dropped.
                   var squareToMoveFrom = findItemSquare(objectBeingGrabbed); //See what square we're taking this from. May not exist in some cases.
                   if(squareToMoveFrom != false){
                     squareToMoveFrom.containedItem = null;

@@ -26,7 +26,7 @@ var items = require('./app/gamedata/items.json');
 var places = require('./app/gamedata/places.json');
 var ratings = require('./app/gamedata/ratings.json');
 var skills = require('./app/gamedata/skills.json');
-
+var equipSlots = require('./appgamedata/skills.json');
 var dataCheck = require('./app/datachecks.js');
 
 var orizioConfig = require('./config/orizioConfig.json')
@@ -224,9 +224,8 @@ console.log('Auth listening on ' + port);
 var healEveryPlayerEveryMin = setInterval(giveHealthToAllLoggedInPlayers,60000);
 
 
-//****************************************
 //*********FUNCTIONS**********************
-//****************************************
+
 
 //*********INVENTORY FUNCTIONS************
 //Given a user and an item, create an instance of it in the player's inventory.
@@ -356,7 +355,8 @@ function moveItemFromInventoryToEquipment(user, itemToMoveGUID){
       if(!itemHasType(user.local.characterInventory[i],"equipment")){
         return console.log("Unable to equip item " + itemToMoveGUID + "Item not equipment.");
       }
-      //If so, equip it.
+      //Ensure item goes into correct slot. If it's displacing an item, have that item move back to inventory.
+      //Create item
       var item;
       item.itemGUID = user.local.characterInventory[i].itemGUID;
       item.typeID = user.local.characterInventory[i].typeID;
@@ -547,6 +547,21 @@ function setupCharacterSkills(_user,skillsFile){
           throw err;
       return null;
   });
+}
+
+//Setup character equipment slots
+//Ensure that the equipment object has the right slots.
+//Structured as such: {slot:item,slot:item}
+function setupCharacterEquipmentSlots(user){
+  //Check for equipped items. If any found, unequip them.
+  for(var i=0;i<user.local.characterEquipment.length;i++){
+    if(typeof user.local.characterEquipment[i] != "undefined" || user.local.characterEquipment[i] != null){
+      moveItemFromEquipmentToInventory(user,user.local.characterEquipment[i]);
+    }
+  }
+  for(var i=0;i<equipSlots.length;i++){
+    equipSlots[equipSlots[i]] = [];
+  }
 }
 
 //getSkillXPFromUser()
